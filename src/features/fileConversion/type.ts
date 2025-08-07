@@ -1,9 +1,20 @@
 // src/features/fileConversion/type.ts
+
+import { LoadingState } from './lib/loadingUtils';
+
 export type UploadedFile = {
   file: File;
   converted: boolean;
   downloadUrl?: string;
   outputFormat: string;
   jobId?: string;
-  isConverting?: boolean;
+  
+
+  // ✅ Enhanced loading state
+  loadingState: LoadingState;
+
+  // ✅ Additional metadata
+  convertedAt?: Date;
+  errorMessage?: string;
+
 };
