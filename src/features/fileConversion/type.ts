@@ -6,6 +6,7 @@ export type UploadedFile = {
   file: File;
   converted: boolean;
   downloadUrl?: string;
+  previewUrl?: string;
   outputFormat: string;
   jobId?: string;
   

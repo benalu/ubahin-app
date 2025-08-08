@@ -4,9 +4,8 @@
 
 import { Dropzone, FileCard, Toolbar } from '@/features/fileConversion/components';
 import { PollingHandler } from '@/features/fileConversion/components/partials/PollingHandler';
-import { useFileConversion } from '@/features/fileConversion/hooks/useFileConversion';
+import { useFileConversionWithGlobalSession } from '@/features/fileConversion/hooks/useFileConversionWithGlobalSession';
 import { AnimatePresence, motion } from 'framer-motion';
-
 export default function FileConversionPage() {
   const {
     files,
@@ -19,12 +18,15 @@ export default function FileConversionPage() {
     resetFiles,
     setFiles,
     allSameCategory,
+    isRestoring,
+    hasSessionData,
     handleSetAllFormats,
-  } = useFileConversion();
+  } = useFileConversionWithGlobalSession();
 
   return (
     <main className="flex flex-col items-center px-4 -mt-2 pb-10">
       <div className="w-full max-w-[708px] space-y-6">
+        {/* Toolbar */}
         <Toolbar
           onConvertAll={handleConvertAll}
           onRemoveAll={resetFiles}

@@ -5,30 +5,27 @@ import { useEffect, useState } from 'react';
 import { getFileCategory } from '@/features/fileConversion/lib/fileUtils';
 import { FileIcon } from '../FileIcon';
 
-interface FilePreviewProps {
+export interface FilePreviewProps {
   file: File;
+  previewUrl?: string;
   className?: string;
 }
 
-export function FilePreview({ file, className }: FilePreviewProps) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+export default function FilePreview({ file, previewUrl, className }: FilePreviewProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(previewUrl ?? null);
   const category = getFileCategory(file);
 
-  // ✅ Proper cleanup for object URLs
   useEffect(() => {
-    if (category === 'image') {
+    if (!previewUrl && category === 'image') {
       const objectUrl = URL.createObjectURL(file);
       setImageUrl(objectUrl);
-
-      // ✅ Cleanup function to prevent memory leaks
       return () => {
         URL.revokeObjectURL(objectUrl);
         setImageUrl(null);
       };
     }
-  }, [file, category]);
+  }, [file, previewUrl, category]);
 
-  // ✅ Handle image loading errors
   const handleImageError = () => {
     if (imageUrl) {
       URL.revokeObjectURL(imageUrl);
@@ -45,14 +42,12 @@ export function FilePreview({ file, className }: FilePreviewProps) {
         height={180}
         className={className ?? 'object-contain max-h-full'}
         onError={handleImageError}
-        // ✅ Add loading placeholder
         placeholder="blur"
-        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYI..."
       />
     );
   }
 
-  // ✅ For all non-image files: show icon
   return (
     <FileIcon 
       file={file} 

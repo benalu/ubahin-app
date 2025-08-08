@@ -4,12 +4,18 @@
 import { Button } from '@/components/ui/button';
 import { X, RefreshCcw, Download } from 'lucide-react';
 import { FormatDropdown } from '../components/partials/FormatDropdown';
-import { FilePreview } from './partials/FilePreview';
 import { LoadingProgress } from './partials/LoadingProgress';
 import type { UploadedFile } from '../type';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { FilePreviewProps } from './partials/FilePreview';
+
+const FilePreview = dynamic(() => import('./partials/FilePreview'), {
+  ssr: false,
+  loading: () => <div className="text-xs text-muted-foreground">Loading preview...</div>,
+}) as React.ComponentType<FilePreviewProps>;
 
 interface FileCardProps {
   item: UploadedFile;
@@ -109,7 +115,7 @@ export default function FileCard({
 
       {/* Preview */}
       <div className="w-full h-[180px] bg-white rounded-md overflow-hidden flex items-center justify-center mb-3">
-        <FilePreview file={item.file} />
+        <FilePreview file={item.file} previewUrl={item.previewUrl} />
       </div>
 
       {/* ✅ Loading Progress with Download Override */}
