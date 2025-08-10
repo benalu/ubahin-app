@@ -1,6 +1,6 @@
 // src/features/fileConversion/lib/validators.ts
 import { MAX_FILE_SIZE } from '@/lib/constants/file';
-import { UploadedFile } from '../type';
+import { UploadedFile } from '../../../types/type';
 import { getFileExtension } from './fileUtils';
 import { MIME_EXTENSION_MAP } from './fileMimeMap';
 import { ErrorCode } from '@/lib/errors/errorMessages';

@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { UploadedFile } from '../type';
+import type { UploadedFile } from '../../../types/type';
 import { createLoadingState } from '../lib/loadingUtils';
 
 const SESSION_KEY = 'ubahin_files_session';

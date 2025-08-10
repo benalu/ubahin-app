@@ -10,7 +10,7 @@
 
 import { usePollingForJobStatus } from '@/features/fileConversion/hooks/usePollingForJobStatus';
 import { useEffect, useState } from 'react';
-import type { UploadedFile } from '@/features/fileConversion/type';
+import type { UploadedFile } from '@/types/type';
 
 interface PollingHandlerProps {
   item: UploadedFile;

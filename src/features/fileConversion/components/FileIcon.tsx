@@ -1,6 +1,6 @@
 'use client';
 
-import { FILE_CATEGORIES } from '../lib/fileCategories';
+import { FILE_CATEGORIES } from '../../../utils/fileCategories';
 import { File } from 'lucide-react';
 import { getFileCategory } from '../lib/fileUtils';
 

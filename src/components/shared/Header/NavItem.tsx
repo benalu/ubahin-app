@@ -41,7 +41,7 @@ export default function NavItem({ href, icon: Icon, label, showIndicator = false
 
           {/* Indikator file di atas icon */}
           {showIndicator && fileCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center shadow">
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-secondary text-white text-[10px] font-bold flex items-center justify-center shadow">
               {fileCount > 9 ? '9+' : fileCount}
             </span>
           )}

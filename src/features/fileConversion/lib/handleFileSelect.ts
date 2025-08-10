@@ -4,7 +4,7 @@ import { getFileExtension, isSupportedFile } from './fileUtils';
 import { validateFile, ValidationResult } from './validators';
 import { getErrorMessage, createFileError, ErrorCode } from '@/lib/errors/errorMessages';
 import { createLoadingState } from './loadingUtils';
-import type { UploadedFile } from '../type';
+import type { UploadedFile } from '../../../types/type';
 
 export function handleFileSelect(
   newFiles: File[],

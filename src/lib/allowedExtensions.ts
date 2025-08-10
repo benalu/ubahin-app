@@ -1,6 +1,6 @@
 // src/lib/allowedExtensions.ts 
 
-import { FILE_CATEGORIES } from '@/features/fileConversion/lib/fileCategories';
+import { FILE_CATEGORIES } from '@/utils/fileCategories';
 
 export const ALLOWED_EXTENSIONS = Object.values(FILE_CATEGORIES)
   .flatMap((cat) => cat.exts)

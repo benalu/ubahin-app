@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, RefreshCcw, Download } from 'lucide-react';
 import { FormatDropdown } from '../components/partials/FormatDropdown';
 import { LoadingProgress } from './partials/LoadingProgress';
-import type { UploadedFile } from '../type';
+import type { UploadedFile } from '../../../types/type';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -97,7 +97,7 @@ export default function FileCard({
       <div className="absolute top-2 right-2 z-10">
         <button 
           onClick={() => onRemove(index)} 
-          className="text-gray-400 hover:text-red-500 transition-colors duration-200"
+          className="text-gray-400 hover:text-red-500 transition-colors duration-200 cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>

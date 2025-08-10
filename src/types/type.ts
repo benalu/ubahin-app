@@ -1,6 +1,6 @@
 // src/features/fileConversion/type.ts
 
-import { LoadingState } from './lib/loadingUtils';
+import { LoadingState } from '../features/fileConversion/lib/loadingUtils';
 
 export type UploadedFile = {
   file: File;

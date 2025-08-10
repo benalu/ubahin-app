@@ -4,8 +4,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { getFileCategory } from '../lib/fileUtils';
-import { FILE_CATEGORIES } from '../lib/fileCategories';
-import type { UploadedFile } from '../type';
+import { FILE_CATEGORIES } from '../../../utils/fileCategories';
+import type { UploadedFile } from '../../../types/type';
 
 import { FileToolbarActions } from './partials/FileToolbarActions';
 import { FileToolbarDropdown } from './partials/FileToolbarDropdown';

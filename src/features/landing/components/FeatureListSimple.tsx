@@ -1,3 +1,4 @@
+// src/features/landing/components/FeatureListSimple.tsx
 import { toolCategories } from "@/features/landing/data/tools";
 
 export default function FeatureListSimple() {

@@ -1,6 +1,6 @@
 // src/features/fileConversion/lib/fileUtils.ts
 
-import { FILE_CATEGORIES } from './fileCategories';
+import { FILE_CATEGORIES } from '../../../utils/fileCategories';
 
 export function getFileExtension(file: File): string {
   const ext = file.name.includes('.') ? file.name.split('.').pop() : '';

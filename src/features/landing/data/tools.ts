@@ -1,3 +1,4 @@
+// src/features/landing/data/tools.ts
 export interface ToolCategory {
   title: string;
   iconSrc: string;
@@ -8,7 +9,7 @@ export interface ToolCategory {
 
 export const toolCategories: ToolCategory[] = [
   {
-    title: "Translation",
+    title: "Translate",
     iconSrc: "/icons/landing/translate.svg",
     iconAlt: "Translation Icon",
     features: ["Paraphraser", "Grammar Checker", "Plagiarism Checker"],
@@ -29,14 +30,14 @@ export const toolCategories: ToolCategory[] = [
     description: "Melihat, membuat anotasi, menambahkan teks atau gambar.",
   },
   {
-    title: "Image Editing Tools",
+    title: "Image Editing",
     iconSrc: "/icons/landing/multipdf.svg",
     iconAlt: "Image Tools Icon",
     features: ["Resize", "Compress", "Convert Format"],
     description: "Menggabungkan, Memutar, Mengatur Ulang, dan Menghapus gambar",
   },
   {
-    title: "Paraphrasing Tools",
+    title: "Parafrase Tools",
     iconSrc: "/icons/landing/paraphrase.svg",
     iconAlt: "Paraphrasing Icon",
     features: ["Resize", "Compress", "Convert Format"],

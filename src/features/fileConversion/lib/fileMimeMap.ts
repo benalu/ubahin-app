@@ -1,6 +1,6 @@
 // src/features/fileConversion/lib/fileMimeMap.ts
 
-import { FILE_CATEGORIES } from './fileCategories';
+import { FILE_CATEGORIES } from '../../../utils/fileCategories';
 
 type MimeExtMap = Record<string, string[]>;
 

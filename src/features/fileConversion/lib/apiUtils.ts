@@ -1,6 +1,6 @@
 // src/features/fileConversion/lib/apiUtils.ts
 
-import { UploadedFile } from '@/features/fileConversion/type';
+import { UploadedFile } from '@/types/type';
 
 type ConvertResult = {
   success: boolean;

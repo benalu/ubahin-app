@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { UploadedFile } from '@/features/fileConversion/type';
+import type { UploadedFile } from '@/types/type';
 
 interface SessionState {
   fileCount: number;

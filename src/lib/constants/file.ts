@@ -1,5 +1,5 @@
 // src/lib/constants/file.ts
-import { FILE_CATEGORIES } from '@/features/fileConversion/lib/fileCategories';
+import { FILE_CATEGORIES } from '@/utils/fileCategories';
 
 // Maksimum ukuran file: 10 MB
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;

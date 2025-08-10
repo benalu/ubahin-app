@@ -11,7 +11,7 @@ import { getFileCategory } from '../lib/fileUtils';
 import { getErrorMessage } from '@/lib/errors/errorMessages';
 import { updateLoadingState } from '../lib/loadingUtils';
 import { useSessionFileStorage } from './useSessionFileStorage';
-import type { UploadedFile } from '../type';
+import type { UploadedFile } from '../../../types/type';
 
 export function useFileConversionWithSession() {
   const {
