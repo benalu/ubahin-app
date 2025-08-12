@@ -1,4 +1,4 @@
-// src/features/fileConversion/lib/fileCategories.ts
+// src/utils/fileCategories.ts
 
 import {
   FileText,
@@ -47,6 +47,27 @@ export const FILE_CATEGORIES: Record<string, FileCategory> = {
     mimeTypes: [
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    ],
+  },
+  // NEW: For Deepl
+   localization: {
+    exts: ['xlf', 'xliff'],
+    icon: FileText,
+    outputFormats: ['xlf'],
+    mimeTypes: [
+      'application/xliff+xml',
+      'application/xml',
+      'text/xml',
+    ],
+  },
+  // NEW: For Deepl
+  subtitle: {
+    exts: ['srt'],
+    icon: FileText,
+    outputFormats: ['srt'],
+    mimeTypes: [
+      'application/x-subrip',
+      'text/plain',
     ],
   },
   archive: {

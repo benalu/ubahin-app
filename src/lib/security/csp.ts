@@ -8,7 +8,7 @@ export function buildCSP(appUrl: string) {
     `style-src 'self' 'unsafe-inline' ${self}`,
     `img-src 'self' data: blob:`,
     `font-src 'self' data:`,
-    `connect-src 'self' ${self} https://api.cloudconvert.com https://status.cloudconvert.com https://storage.cloudconvert.com`,
+    `connect-src 'self' ${self} https://api.deepl.com https://api-free.deepl.com https://api.cloudconvert.com https://status.cloudconvert.com https://storage.cloudconvert.com`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self' https://upload.cloudconvert.com`,

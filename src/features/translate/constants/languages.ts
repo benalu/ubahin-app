@@ -1,6 +1,12 @@
-import type { LangCode } from "@/features/translate/types/index";
+export type LangCode = string;
 
-export const LANGUAGES: { label: string; value: LangCode; flag: string }[] = [
+export type Language = {
+  label: string;
+  value: LangCode;
+  flag: string;
+};
+
+export const LANGUAGES: Language[] = [
   { label: "Detect language", value: "auto", flag: "🌐" },
   { label: "Indonesian", value: "id", flag: "🇮🇩" },
   { label: "English", value: "en", flag: "🇺🇸" },
@@ -15,6 +21,7 @@ export const LANGUAGES: { label: string; value: LangCode; flag: string }[] = [
   { label: "Russian", value: "ru", flag: "🇷🇺" },
 ];
 
-export function getLangData(value: string) {
+/** Ambil metadata bahasa, fallback ke item pertama (Detect). */
+export function getLangData(value: string): Language {
   return LANGUAGES.find((l) => l.value === value) || LANGUAGES[0];
 }

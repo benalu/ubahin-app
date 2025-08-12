@@ -1,12 +1,13 @@
+// src/features/translate/components/LanguageSelector.tsx
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { LANGUAGES, getLangData } from "@/features/translate/constants/languages";
+import { Icons } from "@/ui/icons";
 
 type Props = {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (v: string) => void;
   exclude?: string[];
   className?: string;
 };
@@ -19,9 +20,7 @@ export default function LanguageSelector({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const currentLang = getLangData(value);
-  const availableLanguages = LANGUAGES.filter(
-    (lang) => !exclude.includes(lang.value)
-  );
+  const available = LANGUAGES.filter((l) => !exclude.includes(l.value));
 
   return (
     <div className={`relative ${className}`}>
@@ -31,10 +30,8 @@ export default function LanguageSelector({
       >
         <span className="text-lg">{currentLang.flag}</span>
         <span className="truncate">{currentLang.label}</span>
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+        <Icons.chevronDown
+          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -42,7 +39,7 @@ export default function LanguageSelector({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-            {availableLanguages.map((lang) => (
+            {available.map((lang) => (
               <button
                 key={lang.value}
                 onClick={() => {
