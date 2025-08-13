@@ -1,28 +1,21 @@
 // src/features/translate/components/TextTranslate.tsx
 "use client";
 
-import { useCallback, useState, type ComponentType } from "react";
-import LanguageBar from "./partials/LanguageBar";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import LanguageSelector from "./partials/LanguageSelector";
 import TextInputPanel from "./partials/TextInputPanel";
 import TextOutputPanel from "./partials/TextOutputPanel";
 import { useTextTranslate } from "../hooks/useTextTranslate";
+import { LANGUAGES } from "@/features/translate/constants/languages";
 
 type LangCode = string;
-
-type LanguageSelectorProps = {
-  value: string;
-  onChange: (value: string) => void;
-  exclude?: string[];
-  className?: string;
-};
 
 type Props = {
   sourceLang: LangCode;
   targetLang: LangCode;
   onSourceChange: (v: LangCode) => void;
   onTargetChange: (v: LangCode) => void;
-  onSwap: () => void;
-  LanguageSelector: ComponentType<LanguageSelectorProps>;
+  onSwap?: () => void;
 };
 
 const MAX_CHARS = 5000;
@@ -33,9 +26,14 @@ export default function TextTranslate({
   onSourceChange,
   onTargetChange,
   onSwap,
-  LanguageSelector,
 }: Props) {
   const [copiedSide, setCopiedSide] = useState<"input" | "output" | null>(null);
+
+  // Filter 'auto' di caller (Bar juga punya dedup sebagai guard kedua)
+  const languages = useMemo(
+    () => LANGUAGES.filter(l => l.value !== "auto").map(l => ({ code: l.value, label: l.label })),
+    []
+  );
 
   const { inputText, outputText, errorMsg, loading, handleTextInput, clearAll } =
     useTextTranslate({ sourceLang, targetLang, maxChars: MAX_CHARS });
@@ -50,22 +48,39 @@ export default function TextTranslate({
   const handleSpeak = useCallback(() => {
     if (!outputText) return;
     const utter = new SpeechSynthesisUtterance(outputText);
-    utter.lang = targetLang;
+    utter.lang = targetLang; // map ke "en-US" dsb bila perlu
     speechSynthesis.speak(utter);
   }, [outputText, targetLang]);
 
   const charCount = inputText.length;
   const isOverLimit = charCount > MAX_CHARS;
 
+  // Shortcut: Ctrl/Cmd + K
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (onSwap) onSwap();
+        else if (sourceLang !== "auto") {
+          const s = sourceLang;
+          onSourceChange(targetLang);
+          onTargetChange(s);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onSwap, onSourceChange, onTargetChange, sourceLang, targetLang]);
+
   return (
     <div className="space-y-6">
-      <LanguageBar
+      <LanguageSelector
         sourceLang={sourceLang}
         targetLang={targetLang}
         onSourceChange={onSourceChange}
         onTargetChange={onTargetChange}
-        onSwap={onSwap}
-        LanguageSelector={LanguageSelector}
+        options={languages}
+        disableSwap={sourceLang === "auto"}
       />
 
       <div className="grid gap-0 lg:grid-cols-2 border border-gray-200 rounded-xl overflow-hidden">

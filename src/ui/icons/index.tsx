@@ -2,19 +2,13 @@
 "use client";
 
 import type { ComponentType, SVGProps } from "react";
-import dynamic from "next/dynamic";
+import { lazy, Suspense } from "react";
+import type * as LucideNS from "lucide-react"; // hanya buat tipe
 
-/** Tipe komponen SVG generik */
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
-/**
- * — STRATEGI PEMUATAN —
- * - CORE ICONS: import statis (dipakai di header/tab/chevron supaya tidak “pop in”).
- * - NON-CORE: dynamic import supaya tidak membebani bundle utama.
- */
-
+// Core icons
 import {
-  // core (di atas lipatan)
   Type as IcType,
   FileText as IcFileText,
   Sparkles as IcSparkles,
@@ -22,57 +16,56 @@ import {
   ArrowLeftRight as IcSwap,
 } from "lucide-react";
 
-// non-core (interaksi, muncul setelah user mengetik/klik)
-const IcCopy = dynamic(() => import("lucide-react").then(m => m.Copy));
-const IcCheck = dynamic(() => import("lucide-react").then(m => m.Check));
-const IcRotateCcw = dynamic(() => import("lucide-react").then(m => m.RotateCcw));
-const IcVolume2 = dynamic(() => import("lucide-react").then(m => m.Volume2));
-const IcUpload = dynamic(() => import("lucide-react").then(m => m.Upload));
-const IcX = dynamic(() => import("lucide-react").then(m => m.X));
+// Kunci tipe nama ikon yang valid
+type LucideModule = typeof LucideNS;
+type LucideIconName = keyof LucideModule;
 
-/** Union nama icon kalau kamu mau akses via <Icon name="..." /> */
-export type IconName =
-  | "tabText"
-  | "tabFile"
-  | "tabWrite"
-  | "chevronDown"
-  | "swap"
-  | "copy"
-  | "check"
-  | "rotate"
-  | "speaker"
-  | "upload"
-  | "close";
+// Helper lazy dengan fallback TERSERTIFIKASI adalah ComponentType
+const createLazyIcon = (iconName: LucideIconName) =>
+  lazy(async () => {
+    const mod: LucideModule = await import("lucide-react");
+    // Ambil komponen; kalau tidak ada -> fallback
+    const C =
+      (mod[iconName] as unknown as ComponentType<SVGProps<SVGSVGElement>> | undefined) ??
+      IcFileText;
+    return { default: C as ComponentType<SVGProps<SVGSVGElement>> };
+  });
 
-/** Alias semantik: enak dipakai di seluruh app */
+// Contoh pemakaian
+const IcCopy = createLazyIcon("Copy");
+const IcCheck = createLazyIcon("Check");
+const IcRotateCcw = createLazyIcon("RotateCcw");
+const IcVolume2 = createLazyIcon("Volume2");
+const IcUpload = createLazyIcon("Upload");
+const IcX = createLazyIcon("X");
+
+// Wrapper Suspense
+const LazyIcon = ({
+  Component,
+  fallback = <div className="w-4 h-4 bg-gray-200 animate-pulse rounded" />,
+  ...props
+}: {
+  Component: ComponentType<SVGProps<SVGSVGElement>>;
+  fallback?: React.ReactNode;
+} & SVGProps<SVGSVGElement>) => (
+  <Suspense fallback={fallback}>
+    <Component {...props} />
+  </Suspense>
+);
+
 export const Icons = {
-  // core
+  // Core
   tabText: IcType,
   tabFile: IcFileText,
   tabWrite: IcSparkles,
   chevronDown: IcChevronDown,
   swap: IcSwap,
-  // non-core (dinamis)
-  copy: IcCopy,
-  check: IcCheck,
-  rotate: IcRotateCcw,
-  speaker: IcVolume2,
-  upload: IcUpload,
-  close: IcX,
-} satisfies Record<IconName, IconComponent>;
 
-/** Optional: komponen serbaguna kalau suka pattern <Icon name="copy" /> */
-export function Icon({
-  name,
-  ...props
-}: SVGProps<SVGSVGElement> & { name: IconName }) {
-  const Cmp = Icons[name];
-  return <Cmp {...props} />;
-}
-
-/**
- * NANTI KALAU MAU PAKAI SVG CUSTOM:
- * - Impor komponen SVG custom kamu, lalu timpa entri Icons di sini.
- *   import CustomWrite from "@/features/translate/icons/CustomWrite";
- *   export const Icons = { ...Icons, tabWrite: CustomWrite };
- */
+  // Lazy
+  copy: (props: SVGProps<SVGSVGElement>) => <LazyIcon Component={IcCopy} {...props} />,
+  check: (props: SVGProps<SVGSVGElement>) => <LazyIcon Component={IcCheck} {...props} />,
+  rotate: (props: SVGProps<SVGSVGElement>) => <LazyIcon Component={IcRotateCcw} {...props} />,
+  speaker: (props: SVGProps<SVGSVGElement>) => <LazyIcon Component={IcVolume2} {...props} />,
+  upload: (props: SVGProps<SVGSVGElement>) => <LazyIcon Component={IcUpload} {...props} />,
+  close: (props: SVGProps<SVGSVGElement>) => <LazyIcon Component={IcX} {...props} />,
+} as const;

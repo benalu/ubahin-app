@@ -24,7 +24,7 @@ export default function TabNav({
   onChange,
   navClassName = "flex items-center gap-6",
   itemClassName = "border-transparent text-gray-600 hover:text-gray-900",
-  activeItemClassName = "border-blue-500 text-blue-600",
+  activeItemClassName = "border-secondary text-secondary",
 }: Props) {
   return (
     <div role="tablist" aria-label="Translator tabs" className={navClassName}>
@@ -38,7 +38,7 @@ export default function TabNav({
             aria-controls={`panel-${key}`}
             id={`tab-${key}`}
             onClick={() => onChange(key)}
-            className={`flex items-center gap-2 pb-4 border-b-2 transition-colors ${
+            className={`flex items-center gap-2 pb-4 border-b-2 transition-colors cursor-pointer ${
               active ? activeItemClassName : itemClassName
             }`}
           >

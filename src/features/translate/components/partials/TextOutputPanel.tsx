@@ -37,7 +37,7 @@ export default function TextOutputPanel({
           ) : errorMsg ? (
             <p className="text-red-600">{errorMsg}</p>
           ) : (
-            <p className="text-gray-400">Translation</p>
+            <p className="text-gray-500">Terjemahan</p>
           )}
         </div>
       </div>

@@ -140,6 +140,7 @@ export default function Toolbar({
         handleFormatSelect={handleFormatSelect}
         dropdownPosition={dropdownPosition}
         currentCategoryName={getCurrentCategoryName(files, allSameCategory)}
+        onClose={() => setIsDropdownOpen(false)}
       />
     </>
   );

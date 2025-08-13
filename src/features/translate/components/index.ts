@@ -1,6 +1,5 @@
 export { default as TextTranslate } from "./TextTranslate";
 export { default as FileTranslate } from "./FileTranslate";
-export { default as LanguageSelector } from "./LanguageSelector";
 export { default as TabNav } from "./TabNav";
 export { default as WriteAssistant } from "./WriteAssistant";
 

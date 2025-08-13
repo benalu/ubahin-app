@@ -1,3 +1,4 @@
+// src/app/api/translate/deepl/document/status/route.ts
 import { NextResponse } from "next/server";
 import { assertAllowedOrigin, fetchWithTimeout } from "@/lib/security/server";
 

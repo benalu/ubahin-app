@@ -1,7 +1,9 @@
 // src/app/api/translate/deepl/route.ts
 import { NextResponse } from "next/server";
 import { assertAllowedOrigin, assertTextLimit, fetchWithTimeout } from "@/lib/security/server";
+import { recordUsage, willExceedDailyLimit } from "@/lib/usage/usage";
 
+const PROVIDER = "deepl";
 const DEEPL_ENDPOINT = "https://api.deepl.com/v2/translate";
 
 function mapUiLangToDeepL(lang: string, kind: "source" | "target"): string | undefined {
@@ -20,12 +22,11 @@ function mapUiLangToDeepL(lang: string, kind: "source" | "target"): string | und
 type DeepLTranslateResponse = {
   translations: Array<{ detected_source_language?: string; text: string }>;
 };
-
 type RequestBody = { text: string | string[]; targetLang: string; sourceLang?: string };
 
 export async function POST(req: Request) {
+  let units = 0; // chars
   try {
-    // sesuaikan origin produksi kamu
     assertAllowedOrigin(req, ["http://localhost:", "https://ubahin.app", "https://www.ubahin.app"]);
 
     const apiKey = process.env.DEEPL_API_KEY;
@@ -40,6 +41,12 @@ export async function POST(req: Request) {
     const list = Array.isArray(text) ? text : [text];
     for (const t of list) assertTextLimit(t);
 
+    units = list.reduce((acc, t) => acc + (t?.length ?? 0), 0);
+
+    if (await willExceedDailyLimit(PROVIDER, units)) {
+      return NextResponse.json({ error: "Daily translation quota exceeded" }, { status: 429 });
+    }
+
     const params = new URLSearchParams();
     for (const t of list) params.append("text", t);
 
@@ -50,14 +57,18 @@ export async function POST(req: Request) {
     const mappedSource = mapUiLangToDeepL(sourceLang ?? "", "source");
     if (mappedSource) params.set("source_lang", mappedSource);
 
-    const res = await fetchWithTimeout(DEEPL_ENDPOINT, {
-      method: "POST",
-      headers: {
-        Authorization: `DeepL-Auth-Key ${apiKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+    const res = await fetchWithTimeout(
+      DEEPL_ENDPOINT,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `DeepL-Auth-Key ${apiKey}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
       },
-      body: params.toString(),
-    }, 15000);
+      15000
+    );
 
     const contentType = res.headers.get("content-type") || "";
     const isJson = contentType.toLowerCase().includes("application/json");
@@ -65,6 +76,7 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const payload = isJson ? await res.json() : await res.text();
       const msg = isJson ? (payload?.message ?? payload?.error ?? "DeepL error") : String(payload).slice(0, 400);
+      await recordUsage(PROVIDER, units, false);
       return NextResponse.json({ error: msg, detail: payload }, { status: res.status });
     }
 
@@ -72,11 +84,14 @@ export async function POST(req: Request) {
       ? ((await res.json()) as DeepLTranslateResponse)
       : { translations: [{ text: await res.text() }] };
 
+    await recordUsage(PROVIDER, units, true);
     return NextResponse.json(data);
   } catch (err) {
+    await recordUsage(PROVIDER, units, false);
     const status = (err as { status?: number })?.status ?? 500;
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: "Internal error", detail: message }, { status });
   }
 }
+
 

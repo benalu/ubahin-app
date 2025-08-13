@@ -1,51 +1,47 @@
 // src/features/translate/components/TranslateClient.tsx
 "use client";
 
-import { useCallback, useState, Suspense } from "react";
+import { Suspense, useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-
 import {
   TextTranslate,
-  LanguageSelector,
   TabNav,
-  WriteAssistant, // <- optional fallback kalau mau non-dynamic
+  // WriteAssistant, // kalau mau non-lazy
 } from "@/features/translate/components";
 import type { LangCode } from "@/features/translate/constants/languages";
 import { Icons } from "@/ui/icons";
 
-// ✅ Pisah tab berat
 const FileTranslate = dynamic(
   () => import("@/features/translate/components/FileTranslate"),
   { ssr: false, loading: () => <div className="h-40 rounded-xl bg-gray-50 border border-gray-200 animate-pulse" /> }
 );
+
 const WriteAssistantLazy = dynamic(
   () => import("@/features/translate/components/WriteAssistant"),
   { ssr: false, loading: () => <div className="h-40 rounded-xl bg-gray-50 border border-gray-200 animate-pulse" /> }
 );
 
-type TabKey = "text" | "file" | "write";
+type TabKey = "teks" | "file" | "write";
 
 export default function TranslateClient() {
-  const [activeTab, setActiveTab] = useState<TabKey>("text");
+  const [activeTab, setActiveTab] = useState<TabKey>("teks");
   const [sourceLang, setSourceLang] = useState<LangCode>("auto");
   const [targetLang, setTargetLang] = useState<LangCode>("en");
 
   const swapLanguages = useCallback(() => {
-    if (sourceLang !== "auto") {
-      setSourceLang(targetLang);
-      setTargetLang(sourceLang);
-    }
+    if (sourceLang === "auto") return; // proteksi swap
+    setSourceLang(targetLang);
+    setTargetLang(sourceLang);
   }, [sourceLang, targetLang]);
 
   const tabs = [
-    { key: "text", icon: Icons.tabText, label: "Text" },
-    { key: "file", icon: Icons.tabFile, label: "Documents" },
+    { key: "teks", icon: Icons.tabText, label: "Teks" },
+    { key: "file", icon: Icons.tabFile, label: "Dokumen" },
     { key: "write", icon: Icons.tabWrite, label: "Writing" },
   ] as const;
 
   return (
     <>
-      {/* Top nav (kecil & ringan) */}
       <div className="border-b border-gray-100">
         <div className="mx-auto max-w-5xl px-4">
           <div className="flex items-center justify-between py-4">
@@ -58,16 +54,14 @@ export default function TranslateClient() {
         </div>
       </div>
 
-      {/* Panels */}
       <div className="mx-auto max-w-5xl px-4 py-8">
-        {activeTab === "text" && (
+        {activeTab === "teks" && (
           <TextTranslate
             sourceLang={sourceLang}
             targetLang={targetLang}
             onSourceChange={setSourceLang}
             onTargetChange={setTargetLang}
             onSwap={swapLanguages}
-            LanguageSelector={LanguageSelector}
           />
         )}
 
@@ -78,7 +72,6 @@ export default function TranslateClient() {
               targetLang={targetLang}
               onSourceChange={setSourceLang}
               onTargetChange={setTargetLang}
-              LanguageSelector={LanguageSelector}
             />
           </Suspense>
         )}
@@ -86,10 +79,11 @@ export default function TranslateClient() {
         {activeTab === "write" && (
           <Suspense fallback={<div className="h-40 rounded-xl bg-gray-50 border border-gray-200 animate-pulse" />}>
             <WriteAssistantLazy />
-            {/* atau pakai <WriteAssistant /> kalau nggak mau dynamic */}
+            {/* atau pakai <WriteAssistant /> */}
           </Suspense>
         )}
       </div>
     </>
   );
 }
+
