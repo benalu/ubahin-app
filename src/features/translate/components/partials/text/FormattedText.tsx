@@ -22,14 +22,18 @@ function toSafeHtml(input: string): string {
 
   // 1) Tandai segmen dengan placeholder aman
   let s = input;
+  // Preserve existing tags by converting them to placeholders first
+  s = s.replace(/<(strong|b)>([\s\S]*?)<\/(strong|b)>/gi, "[STRONG]$2[/STRONG]");
+  s = s.replace(/<(em|i)>([\s\S]*?)<\/(em|i)>/gi, "[EM]$2[/EM]");
+  s = s.replace(/<(del|s|strike)>([\s\S]*?)<\/(del|s|strike)>/gi, "[DEL]$2[/DEL]");
+  s = s.replace(/<u>([\s\S]+?)<\/u>/gi, "[U]$1[/U]");
+  s = s.replace(/<br\s*\/?\s*>/gi, "[BR]");
   // Strikethrough ~~text~~
   s = s.replace(/~~([\s\S]+?)~~/g, "[DEL]$1[/DEL]");
   // Bold **text** (proses sebelum italic)
   s = s.replace(/\*\*([\s\S]+?)\*\*/g, "[STRONG]$1[/STRONG]");
   // Italic *text*
   s = s.replace(/\*([\s\S]+?)\*/g, "[EM]$1[/EM]");
-  // Underline <u>text</u> (khusus dari toolbar kita)
-  s = s.replace(/<u>([\s\S]+?)<\/u>/gi, "[U]$1[/U]");
 
   // 2) Escape seluruh string agar aman
   s = escapeHtml(s);
@@ -43,7 +47,8 @@ function toSafeHtml(input: string): string {
     .replace(/\[DEL\]/g, "<del>")
     .replace(/\[\/DEL\]/g, "</del>")
     .replace(/\[U\]/g, "<u>")
-    .replace(/\[\/U\]/g, "</u>");
+    .replace(/\[\/U\]/g, "</u>")
+    .replace(/\[BR\]/g, "<br>");
 
   return s;
 }
