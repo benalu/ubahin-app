@@ -1,6 +1,7 @@
 // src/app/api/translate/deepl/route.ts
 import { NextResponse } from "next/server";
 import { assertAllowedOrigin, assertTextLimit, fetchWithTimeout } from "@/lib/security/server";
+import { markersToXml } from "@/features/translate/components/partials/text/formatting";
 import { recordUsage, willExceedDailyLimit } from "@/lib/usage/usage";
 
 const PROVIDER = "deepl";
@@ -48,7 +49,11 @@ export async function POST(req: Request) {
     }
 
     const params = new URLSearchParams();
-    for (const t of list) params.append("text", t);
+    // Convert marker syntax to XML-ish tags so DeepL can preserve formatting
+    for (const t of list) {
+      const xml = markersToXml(t);
+      params.append("text", xml);
+    }
 
     const mappedTarget = mapUiLangToDeepL(targetLang, "target");
     if (!mappedTarget) return NextResponse.json({ error: "Unsupported/invalid target language" }, { status: 400 });
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
     const mappedSource = mapUiLangToDeepL(sourceLang ?? "", "source");
     if (mappedSource) params.set("source_lang", mappedSource);
 
-    // Preserve markup tags (bold/italic/underline/strike) so they are not translated/removed
+    // Preserve markup tags (bold/italic/underline/strike)
     params.set("tag_handling", "xml");
     params.set("preserve_formatting", "1");
 

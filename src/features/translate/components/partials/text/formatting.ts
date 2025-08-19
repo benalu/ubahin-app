@@ -80,3 +80,20 @@ export function htmlToMarkers(html: string): string {
   return s.trim();
 }
 
+// Convert our marker syntax into simple XML/HTML tags for translation providers
+export function markersToXml(input: string): string {
+  if (!input) return "";
+  let s = input;
+  // Normalize line breaks to <br/>
+  s = s.replace(/\r?\n/g, "<br/>");
+  // Convert markers to tags
+  s = s.replace(/\*\*([\s\S]+?)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/\*([\s\S]+?)\*/g, "<em>$1</em>");
+  s = s.replace(/__([\s\S]+?)__/g, "<strong>$1</strong>");
+  s = s.replace(/_([\s\S]+?)_/g, "<em>$1</em>");
+  s = s.replace(/~~([\s\S]+?)~~/g, "<del>$1</del>");
+  // Preserve underline marker as tag
+  // If user literally typed <u>...</u> keep it
+  return s;
+}
+
