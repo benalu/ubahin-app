@@ -1,7 +1,8 @@
 // src/features/translate/components/partials/TextInputPanel.tsx
 "use client";
 
-import { Check, Copy, RotateCcw, Type } from "lucide-react";
+import { useRef } from "react";
+import { Bold, Check, Copy, Italic, RotateCcw, Strikethrough, Type, Underline } from "lucide-react";
 import AccessibleProgress from "./text/AccessibleProgress";
 import ActionBar from "./text/ActionBar";
 import { autoResize } from "@/features/translate/utils/autoResize";
@@ -43,6 +44,7 @@ export default function TextInputPanel({
   isOverLimit,
   stickyActionBar,
 }: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const hasContent = value.trim().length > 0;
   const percentage = Math.min((charCount / maxChars) * 100, 100);
 
@@ -58,6 +60,7 @@ export default function TextInputPanel({
       <div className="p-6 border-b border-gray-100 lg:border-b-0 lg:border-r">
         <div className="relative">
           <textarea
+            ref={textareaRef}
             value={value}
             onChange={(e) => {
               onChange(e.target.value);
@@ -109,6 +112,127 @@ export default function TextInputPanel({
             >
               <RotateCcw className="h-4 w-4 text-gray-600" />
             </button>
+
+            {/* Toolbar formatting - tampil hanya saat ada input */}
+            {hasContent && (
+              <div className="flex items-center gap-1 overflow-x-auto max-w-[60vw] md:max-w-none">
+                <button
+                  onClick={() => {
+                    const el = textareaRef.current;
+                    if (!el) return;
+                    const start = el.selectionStart ?? 0;
+                    const end = el.selectionEnd ?? 0;
+                    const before = value.slice(0, start);
+                    const selected = value.slice(start, end);
+                    const after = value.slice(end);
+                    const wrapped = `**${selected || ""}**`;
+                    const next = `${before}${wrapped}${after}`;
+                    onChange(next);
+                    requestAnimationFrame(() => {
+                      if (!textareaRef.current) return;
+                      const cursorPos = start + 2;
+                      const newEnd = start + wrapped.length - 2;
+                      textareaRef.current.selectionStart = cursorPos;
+                      textareaRef.current.selectionEnd = selected ? newEnd : cursorPos;
+                      autoResize(textareaRef.current);
+                      textareaRef.current.focus();
+                    });
+                  }}
+                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  title="Bold"
+                  aria-label="Bold"
+                >
+                  <Bold className="h-4 w-4 text-gray-700" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    const el = textareaRef.current;
+                    if (!el) return;
+                    const start = el.selectionStart ?? 0;
+                    const end = el.selectionEnd ?? 0;
+                    const before = value.slice(0, start);
+                    const selected = value.slice(start, end);
+                    const after = value.slice(end);
+                    const wrapped = `*${selected || ""}*`;
+                    const next = `${before}${wrapped}${after}`;
+                    onChange(next);
+                    requestAnimationFrame(() => {
+                      if (!textareaRef.current) return;
+                      const cursorPos = start + 1;
+                      const newEnd = start + wrapped.length - 1;
+                      textareaRef.current.selectionStart = cursorPos;
+                      textareaRef.current.selectionEnd = selected ? newEnd : cursorPos;
+                      autoResize(textareaRef.current);
+                      textareaRef.current.focus();
+                    });
+                  }}
+                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  title="Italic"
+                  aria-label="Italic"
+                >
+                  <Italic className="h-4 w-4 text-gray-700" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    const el = textareaRef.current;
+                    if (!el) return;
+                    const start = el.selectionStart ?? 0;
+                    const end = el.selectionEnd ?? 0;
+                    const before = value.slice(0, start);
+                    const selected = value.slice(start, end);
+                    const after = value.slice(end);
+                    const wrapped = `~~${selected || ""}~~`;
+                    const next = `${before}${wrapped}${after}`;
+                    onChange(next);
+                    requestAnimationFrame(() => {
+                      if (!textareaRef.current) return;
+                      const cursorPos = start + 2;
+                      const newEnd = start + wrapped.length - 2;
+                      textareaRef.current.selectionStart = cursorPos;
+                      textareaRef.current.selectionEnd = selected ? newEnd : cursorPos;
+                      autoResize(textareaRef.current);
+                      textareaRef.current.focus();
+                    });
+                  }}
+                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  title="Strikethrough"
+                  aria-label="Strikethrough"
+                >
+                  <Strikethrough className="h-4 w-4 text-gray-700" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    const el = textareaRef.current;
+                    if (!el) return;
+                    const start = el.selectionStart ?? 0;
+                    const end = el.selectionEnd ?? 0;
+                    const before = value.slice(0, start);
+                    const selected = value.slice(start, end);
+                    const after = value.slice(end);
+                    const wrapped = `<u>${selected || ""}</u>`;
+                    const next = `${before}${wrapped}${after}`;
+                    onChange(next);
+                    requestAnimationFrame(() => {
+                      if (!textareaRef.current) return;
+                      const cursorPos = start + 3; // after <u>
+                      const newEnd = start + wrapped.length - 4; // before </u>
+                      textareaRef.current.selectionStart = cursorPos;
+                      textareaRef.current.selectionEnd = selected ? newEnd : cursorPos;
+                      autoResize(textareaRef.current);
+                      textareaRef.current.focus();
+                    });
+                  }}
+                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  title="Underline"
+                  aria-label="Underline"
+                >
+                  <Underline className="h-4 w-4 text-gray-700" />
+                </button>
+              </div>
+            )}
           </>
         }
         right={
