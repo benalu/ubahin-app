@@ -1,4 +1,4 @@
-// src/features/translate/components/partials/DocDropArea.tsx
+// src/features/translate/components/partials/document/DocDropArea.tsx
 "use client";
 
 import { Upload } from "lucide-react";
@@ -30,9 +30,9 @@ export default function DocDropArea({
   return (
     <div
       className={[
-        "relative rounded-xl overflow-hidden",
-        "border-1", // ketebalan tetap (agar layout tidak berubah)
-        isDragging ? "border-transparent" : "border-black", // ⬅️ sembunyikan border saat drag
+        "relative w-full rounded-xl overflow-hidden",
+        "border",
+        isDragging ? "border-transparent" : "border-gray-900",
       ].join(" ")}
     >
       <input
@@ -44,7 +44,7 @@ export default function DocDropArea({
         className="hidden"
       />
 
-      {/* Overlay highlight (border dashed biru + tint) */}
+      {/* overlay dashed saat drag */}
       <div
         className={[
           "pointer-events-none absolute inset-0 rounded-xl",
@@ -57,7 +57,7 @@ export default function DocDropArea({
         <div className="absolute inset-0 rounded-xl border-2 border-dashed border-blue-600" />
       </div>
 
-      {/* Konten clickable */}
+      {/* konten: min-height responsive, TANPA h-full */}
       <div
         role="button"
         tabIndex={0}
@@ -73,8 +73,9 @@ export default function DocDropArea({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={[
-          "relative z-10 w-full min-h-[360px]",
+          "relative z-10 w-full",
           "flex flex-col items-center justify-center",
+          "min-h-[260px] sm:min-h-[320px] md:min-h-[360px]",
           "p-12 text-center transition-colors",
           isDragging ? "cursor-copy" : "hover:bg-gray-50 cursor-pointer",
         ].join(" ")}

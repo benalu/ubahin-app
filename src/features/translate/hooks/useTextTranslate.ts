@@ -1,3 +1,4 @@
+// src/features/translate/hooks/useTextTranslate.ts
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -56,9 +57,22 @@ export function useTextTranslate(params: {
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
-  const reqIdRef = useRef(0); // cegah stale response menimpa hasil baru
+  const reqIdRef = useRef(0);                 // cegah stale response menimpa hasil baru
+  const prevTypedRef = useRef("");            // track input per keystroke
 
-  // Untuk debugging/insight (opsional)
+  // State hasil terakhir yang SUDAH diterjemahkan
+  const lastTranslationRef = useRef<{
+    input: string;
+    output: string;
+    sourceLang: string;
+    targetLang: string;
+  }>({
+    input: "",
+    output: "",
+    sourceLang: "",
+    targetLang: "",
+  });
+
   const perfDeps = useMemo(
     () => ({ sourceLang, targetLang, maxChars }),
     [sourceLang, targetLang, maxChars]
@@ -69,6 +83,12 @@ export function useTextTranslate(params: {
       if (!text.trim()) {
         setOutputText("");
         setErrorMsg(null);
+        lastTranslationRef.current = {
+          input: "",
+          output: "",
+          sourceLang,
+          targetLang,
+        };
         return;
       }
 
@@ -76,7 +96,7 @@ export function useTextTranslate(params: {
       const trimmedText = text.slice(0, maxChars);
       const startTime = Date.now();
 
-      // Cek cache
+      // Cache hit?
       const cachedResult = translationCache.getCachedTranslation(
         trimmedText,
         sourceLang,
@@ -85,15 +105,21 @@ export function useTextTranslate(params: {
       if (cachedResult) {
         setOutputText(cachedResult);
         setErrorMsg(null);
-        setMetrics((prev) => ({
-          ...prev,
-          cacheHits: prev.cacheHits + 1,
-          requestCount: prev.requestCount + 1,
+        lastTranslationRef.current = {
+          input: trimmedText,
+          output: cachedResult,
+          sourceLang,
+          targetLang,
+        };
+        setMetrics((p) => ({
+          ...p,
+          cacheHits: p.cacheHits + 1,
+          requestCount: p.requestCount + 1,
         }));
         return;
       }
 
-      // Abort request lama dengan reason (biar tidak "without reason")
+      // Abort request lama
       controllerRef.current?.abort(new DOMException("new-input", "AbortError"));
       const ctrl = new AbortController();
       controllerRef.current = ctrl;
@@ -102,13 +128,11 @@ export function useTextTranslate(params: {
       setErrorMsg(null);
 
       try {
-        const deduplicationKey = `${trimmedText}:${sourceLang}:${targetLang}`;
-
-        // Dedup; factory mengembalikan string | null (null = aborted)
+        const dedupKey = `${trimmedText}:${sourceLang}:${targetLang}`;
         const translation = await translationDeduplicator.deduplicate(
-          deduplicationKey,
+          dedupKey,
           async () => {
-            if (ctrl.signal.aborted) return null; // sudah batal sebelum mulai
+            if (ctrl.signal.aborted) return null;
 
             let res: Response;
             try {
@@ -123,16 +147,13 @@ export function useTextTranslate(params: {
                 }),
               });
             } catch (e) {
-              // swallow abort—anggap dibatalkan normal
               if (isAbortError(e)) return null;
               throw e;
             }
 
             if (!res.ok) {
               if (res.status === 429) {
-                throw new Error(
-                  "Rate limit exceeded. Please wait before trying again."
-                );
+                throw new Error("Rate limit exceeded. Please wait before trying again.");
               }
               throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
@@ -140,7 +161,6 @@ export function useTextTranslate(params: {
             const contentType = res.headers.get("content-type") || "";
             const isJson = contentType.toLowerCase().includes("application/json");
             const data = isJson ? await res.json() : await res.text();
-
             const result =
               typeof data === "string" ? data : data?.translations?.[0]?.text ?? "";
 
@@ -148,14 +168,12 @@ export function useTextTranslate(params: {
           }
         );
 
-        // Jika null → request dibatalkan; diam saja
-        if (translation == null) return;
+        if (translation == null) return; // dibatalkan
 
         if (!translation) {
           throw new Error("Empty translation received");
         }
 
-        // Cache hasil
         translationCache.setCachedTranslation(
           trimmedText,
           sourceLang,
@@ -163,64 +181,105 @@ export function useTextTranslate(params: {
           translation
         );
 
-        // Jangan timpa bila sudah ada request yang lebih baru
-        if (myId !== reqIdRef.current) return;
+        if (myId !== reqIdRef.current) return; // stale
 
         setOutputText(translation);
+        lastTranslationRef.current = {
+          input: trimmedText,
+          output: translation,
+          sourceLang,
+          targetLang,
+        };
 
         const latency = Date.now() - startTime;
-        setMetrics((prev) => ({
-          requestCount: prev.requestCount + 1,
-          cacheHits: prev.cacheHits,
-          totalLatency: prev.totalLatency + latency,
-          avgLatency: Math.round(
-            (prev.totalLatency + latency) / (prev.requestCount + 1)
-          ),
-          errors: prev.errors,
+        setMetrics((p) => ({
+          requestCount: p.requestCount + 1,
+          cacheHits: p.cacheHits,
+          totalLatency: p.totalLatency + latency,
+          avgLatency: Math.round((p.totalLatency + latency) / (p.requestCount + 1)),
+          errors: p.errors,
         }));
-      } catch (err: unknown) {
-        if (isAbortError(err)) return; // diamkan abort normal
-
-        // Error asli
+      } catch (err) {
+        if (isAbortError(err)) return;
         // eslint-disable-next-line no-console
         console.error("Translation error:", err);
-        const em = getErrorMessage(
-          err instanceof Error ? err : String(err),
-          { operation: "convert" }
-        );
+        const em = getErrorMessage(err instanceof Error ? err : String(err), {
+          operation: "convert",
+        });
         setErrorMsg(em.message);
-        toastError(em);
         setOutputText("");
-
-        setMetrics((prev) => ({
-          ...prev,
-          requestCount: prev.requestCount + 1,
-          errors: prev.errors + 1,
+        setMetrics((p) => ({
+          ...p,
+          requestCount: p.requestCount + 1,
+          errors: p.errors + 1,
         }));
       } finally {
-        // Hanya matikan loading untuk request yang masih aktif
         if (myId === reqIdRef.current) setLoading(false);
       }
     },
     [sourceLang, targetLang, maxChars]
   );
 
+  /** Clear rule yang agresif + optimistic trim */
   const handleTextInput = useCallback(
     (value: string) => {
       setInputText(value);
       if (timerRef.current) clearTimeout(timerRef.current);
 
-      const delay = value.length < 100 ? 250 : value.length < 500 ? 350 : 500;
+      const was = prevTypedRef.current;
+      const isDeleting = value.length < was.length;
+      prevTypedRef.current = value;
+
+      // ====== Dinamika saat user menghapus ======
+      if (isDeleting && outputText) {
+        const last = lastTranslationRef.current;
+        const baseLen = last.input.length || 1;
+        const ratio = Math.max(0, Math.min(1, value.length / baseLen));
+
+        // 1) Optimistic trim: pangkas output sementara proporsional
+        const approx = Math.floor((last.output || outputText).length * ratio);
+        setOutputText((prev) => (prev ? prev.slice(0, approx) : ""));
+
+        // 2) Bersihkan error & set loading false (kita akan trigger translate baru)
+        setErrorMsg(null);
+        setLoading(false);
+      }
+
+      // ====== Kalau input kosong → reset cepat ======
+      if (!value.trim()) {
+        controllerRef.current?.abort(new DOMException("empty", "AbortError"));
+        setOutputText("");
+        setErrorMsg(null);
+        setLoading(false);
+        lastTranslationRef.current = {
+          input: "",
+          output: "",
+          sourceLang,
+          targetLang,
+        };
+        return;
+      }
+
+      // ====== Debounce adaptif ======
+      const delay =
+        isDeleting ? 150 : value.length < 100 ? 250 : value.length < 500 ? 350 : 500;
 
       timerRef.current = setTimeout(() => {
         void doTranslate(value);
       }, delay);
     },
-    [doTranslate]
+    [doTranslate, outputText, sourceLang, targetLang]
   );
 
-  // Auto-translate saat bahasa berubah
+  // Re-translate saat bahasa berubah + clear cepat
   useEffect(() => {
+    const last = lastTranslationRef.current;
+    if (sourceLang !== last.sourceLang || targetLang !== last.targetLang) {
+      if (outputText) {
+        setOutputText("");
+        setErrorMsg(null);
+      }
+    }
     if (inputText.trim()) {
       void doTranslate(inputText);
     }
@@ -230,9 +289,7 @@ export function useTextTranslate(params: {
   // Cleanup
   useEffect(() => {
     return () => {
-      controllerRef.current?.abort(
-        new DOMException("unmount", "AbortError")
-      );
+      controllerRef.current?.abort(new DOMException("unmount", "AbortError"));
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
@@ -243,7 +300,14 @@ export function useTextTranslate(params: {
     setInputText("");
     setOutputText("");
     setErrorMsg(null);
-  }, []);
+    prevTypedRef.current = "";
+    lastTranslationRef.current = {
+      input: "",
+      output: "",
+      sourceLang,
+      targetLang,
+    };
+  }, [sourceLang, targetLang]);
 
   const performanceInfo = useMemo(() => {
     const cacheStats = translationCache.getStats();
@@ -256,7 +320,7 @@ export function useTextTranslate(params: {
         metrics.requestCount > 0 ? metrics.errors / metrics.requestCount : 0,
       cacheStats,
       deduplicationStats,
-      deps: perfDeps, // membantu debug (apa yang di-observe)
+      deps: perfDeps,
     };
   }, [metrics, perfDeps]);
 

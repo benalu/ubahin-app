@@ -22,7 +22,7 @@ export class LRUTranslationCache<T> {
   private defaultTTL: number;
   private stats: CacheStats = { hits: 0, misses: 0, evictions: 0, size: 0 };
 
-  constructor(maxSize = 1000, defaultTTL = 1000 * 60 * 30) {
+  constructor(maxSize = 1000, defaultTTL = 1000 * 60 * 60) {
     this.maxSize = maxSize;
     this.defaultTTL = defaultTTL;
   }
@@ -34,14 +34,12 @@ export class LRUTranslationCache<T> {
   private evictLRU(): void {
     let oldestKey = "";
     let oldestAccess = Date.now();
-
     for (const [key, entry] of this.cache) {
       if (entry.lastAccessed < oldestAccess) {
         oldestAccess = entry.lastAccessed;
         oldestKey = key;
       }
     }
-
     if (oldestKey) {
       this.cache.delete(oldestKey);
       this.stats.evictions++;
@@ -59,49 +57,39 @@ export class LRUTranslationCache<T> {
   }
 
   set(key: string, value: T, ttl?: number): void {
-    // Cleanup expired entries periodically
     if (Math.random() < 0.01) this.cleanup(); // ~1%
-
-    // Evict if at capacity
     if (this.cache.size >= this.maxSize) this.evictLRU();
 
     const now = Date.now();
-    const entry: CacheEntry<T> = {
+    this.cache.set(key, {
       value,
       timestamp: now,
       ttl: ttl ?? this.defaultTTL,
       accessCount: 0,
       lastAccessed: now,
-    };
-
-    this.cache.set(key, entry);
+    });
     this.stats.size = this.cache.size;
   }
 
   get(key: string): T | undefined {
     const entry = this.cache.get(key);
-
     if (!entry) {
       this.stats.misses++;
       return undefined;
     }
-
     if (this.isExpired(entry)) {
       this.cache.delete(key);
       this.stats.misses++;
       this.stats.size = this.cache.size;
       return undefined;
     }
-
     entry.accessCount++;
     entry.lastAccessed = Date.now();
     this.stats.hits++;
-
     return entry.value;
   }
 
   has(key: string): boolean {
-    // NOTE: uses get() to respect TTL and update stats/LRU
     return this.get(key) !== undefined;
   }
 
@@ -128,68 +116,63 @@ export class LRUTranslationCache<T> {
 
 // -------------------- Translation-specific Layer --------------------
 
-// Helper base64 aman di browser & node (sinkron)
-function toBase64UTF8(input: string): string {
-  // Normalisasi ke UTF-8 lalu encode base64
-  if (typeof window === "undefined") {
-    // Node (SSR)
-    // eslint-disable-next-line n/no-deprecated-api
-    return Buffer.from(input, "utf-8").toString("base64");
+// Hash sinkron, cepat, dan stabil (53-bit) — cocok untuk key Map.
+function cyrb53(str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
   }
-  // Browser
-  // encodeURIComponent -> unescape agar aman untuk btoa
-  // (unescape dipakai khusus di sini agar karakter UTF-8 jadi byte sequence)
-  // eslint-disable-next-line deprecation/deprecation
-  return btoa(unescape(encodeURIComponent(input)));
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  // gabung ke 53-bit number
+  return (h2 & 0x1fffff) * 0x100000000 + (h1 >>> 0);
 }
 
 export type DetectedLanguage = {
-  code: string; // e.g. "en", "id"
-  confidence: number; // 0..1
+  code: string;        // e.g. "en", "id"
+  confidence: number;  // 0..1
 };
 
 export class TranslationCache {
-  // Cache untuk hasil terjemahan teks
-  private textCache = new LRUTranslationCache<string>(1000, 1000 * 60 * 60); // 1 jam
+  // 1 jam TTL untuk teks
+  private textCache = new LRUTranslationCache<string>(1000, 1000 * 60 * 60);
+  // 24 jam TTL untuk data bahasa
+  private languageCache = new LRUTranslationCache<unknown>(100, 1000 * 60 * 60 * 24);
 
-  // Cache terkait bahasa (bisa bermacam-macam bentuk) -> gunakan unknown
-  // Hindari `any`; akses lewat helper generic agar tetap typed saat mengambil/menyimpan.
-  private languageCache = new LRUTranslationCache<unknown>(100, 1000 * 60 * 60 * 24); // 24 jam
+  // ⚠️ Prefix versi agar kunci lama tidak bentrok (dan otomatis "invalidated")
+  private static KEY_VER = "v2";
 
   private generateTextKey(text: string, sourceLang: string, targetLang: string): string {
-    // Buat key deterministik dari input (dipangkas agar tidak kepanjangan)
-    const normalized = text.trim().toLowerCase();
-    const base64 = toBase64UTF8(normalized).slice(0, 32);
-    return `text:${sourceLang}:${targetLang}:${base64}`;
+    // Simpan *seluruh* konten sebagai fingerprint hash + panjang,
+    // jangan slice prefix base64 (bisa tabrakan!)
+    const normalized = text.normalize("NFC");  // pertahankan case
+    const length = normalized.length;
+    const hash = cyrb53(normalized, 0).toString(36);
+    return `${TranslationCache.KEY_VER}:${sourceLang}:${targetLang}:${length}:${hash}`;
   }
 
   // ------ Text translation cache ------
   getCachedTranslation(text: string, sourceLang: string, targetLang: string): string | undefined {
-    const key = this.generateTextKey(text, sourceLang, targetLang);
-    return this.textCache.get(key);
+    return this.textCache.get(this.generateTextKey(text, sourceLang, targetLang));
   }
 
   setCachedTranslation(text: string, sourceLang: string, targetLang: string, translation: string): void {
-    const key = this.generateTextKey(text, sourceLang, targetLang);
-    this.textCache.set(key, translation);
+    this.textCache.set(this.generateTextKey(text, sourceLang, targetLang), translation);
   }
 
   // ------ Language-related generic helpers ------
-  // Misal: simpan hasil deteksi bahasa per teks, atau daftar bahasa yang didukung, dsb.
-
   setLanguageData<T>(key: string, value: T, ttlMs?: number): void {
     this.languageCache.set(key, value as unknown, ttlMs);
   }
-
   getLanguageData<T>(key: string): T | undefined {
     return this.languageCache.get(key) as T | undefined;
   }
 
-  // Convenience untuk deteksi bahasa (typed contoh)
   setDetectedLanguage(key: string, data: DetectedLanguage, ttlMs?: number): void {
     this.setLanguageData<DetectedLanguage>(`det:${key}`, data, ttlMs);
   }
-
   getDetectedLanguage(key: string): DetectedLanguage | undefined {
     return this.getLanguageData<DetectedLanguage>(`det:${key}`);
   }
@@ -206,7 +189,6 @@ export class TranslationCache {
 
   clearAll(): void {
     this.textCache.clear();
-    // @ts-expect-error private method not exposed; gunakan clear publik
     this.languageCache.clear();
   }
 }

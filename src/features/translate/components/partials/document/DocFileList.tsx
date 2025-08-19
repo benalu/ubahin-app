@@ -7,6 +7,7 @@ import {
   type FixedSizeList as FixedSizeListType,
 } from "react-window";
 import DocFileListItem from "./DocFileListItem";
+import FileListHeader from "./FileListHeader";
 import type { JobInfo } from "@/features/translate/hooks/useFileTranslate";
 
 interface DocFileListProps {
@@ -14,8 +15,6 @@ interface DocFileListProps {
   jobs: Record<number, JobInfo>;
   onRemove: (index: number) => void;
   maxHeight?: number;
-  /** Konten tambahan di bagian bawah panel (mis. tombol Add files) */
-  footer?: React.ReactNode;
 }
 
 interface ItemData {
@@ -50,26 +49,28 @@ export default function DocFileList({
   jobs,
   onRemove,
   maxHeight = 400,
-  footer,
 }: DocFileListProps) {
   const listRef = useRef<FixedSizeListType | null>(null);
-
-  const itemData = useMemo(
-    () => ({ files, jobs, onRemove }),
-    [files, jobs, onRemove]
-  );
-
-  if (files.length === 0) return null;
+  const itemData = useMemo(() => ({ files, jobs, onRemove }), [files, jobs, onRemove]);
 
   const useVirtualization = files.length > 10;
-  const itemHeight = 80;
+  const itemHeight = 92;
   const listHeight = useVirtualization
     ? Math.min(maxHeight, files.length * itemHeight)
     : files.length * itemHeight;
 
+  const totalBytes = useMemo(
+    () => files.reduce((sum, f) => sum + f.size, 0),
+    [files]
+  );
+
+  if (files.length === 0) return null;
+
   return (
-    <div className="border-t border-gray-200 bg-white">
-      <div className="p-4">
+    <div className="rounded-2xl border border-gray-500 bg-white shadow-sm overflow-hidden">
+      <FileListHeader count={files.length} totalBytes={totalBytes} />
+
+      <div className="bg-gray-50">
         <div className="space-y-3" style={{ height: listHeight }}>
           {useVirtualization ? (
             <List
@@ -80,34 +81,25 @@ export default function DocFileList({
               itemSize={itemHeight}
               itemData={itemData}
               overscanCount={5}
+              className="!overflow-x-hidden" // ⬅️ cegah horizontal bleed
             >
               {FileItem}
             </List>
           ) : (
             files.map((file, index) => (
-              <DocFileListItem
-                key={`${file.name}-${index}`}
-                file={file}
-                index={index}
-                job={jobs[index]}
-                onRemove={onRemove}
-              />
+              <div key={`${file.name}-${index}`} className="px-4 py-2">
+                <DocFileListItem
+                  file={file}
+                  index={index}
+                  job={jobs[index]}
+                  onRemove={onRemove}
+                />
+              </div>
             ))
           )}
         </div>
 
-        {/* Summary + optional footer */}
-        <div className="pt-4 border-t border-gray-300">
-          <div className="text-sm text-gray-600">
-            {files.length} file{files.length > 1 ? "s" : ""} selected
-            {useVirtualization && (
-              <span className="ml-2 text-xs text-gray-400">
-                (Virtual scrolling enabled)
-              </span>
-            )}
-          </div>
-          {footer ? <div className="mt-4 grid">{footer}</div> : null}
-        </div>
+        
       </div>
     </div>
   );

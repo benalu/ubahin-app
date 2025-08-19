@@ -83,7 +83,7 @@ export default function TextTranslate({
         disableSwap={sourceLang === "auto"}
       />
 
-      <div className="grid gap-0 lg:grid-cols-2 border border-gray-200 rounded-xl overflow-hidden">
+      <div className="grid gap-0 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 border border-gray-200 rounded-xl overflow-hidden">
         <TextInputPanel
           value={inputText}
           onChange={handleTextInput}
