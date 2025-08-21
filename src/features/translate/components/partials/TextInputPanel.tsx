@@ -1,7 +1,7 @@
 // src/features/translate/components/partials/TextInputPanel.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bold, Check, Copy, Italic, RotateCcw, Strikethrough, Type, Underline } from "lucide-react";
 import AccessibleProgress from "./text/AccessibleProgress";
 import ActionBar from "./text/ActionBar";
@@ -47,6 +47,7 @@ export default function TextInputPanel({
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const [formatState, setFormatState] = useState({ bold: false, italic: false, underline: false, strike: false });
   const hasContent = value.trim().length > 0;
   const percentage = Math.min((charCount / maxChars) * 100, 100);
 
@@ -64,6 +65,47 @@ export default function TextInputPanel({
       editorRef.current.innerHTML = safeHtml || "";
     }
   }, [value]);
+
+  // Sync format active state with current selection
+  useEffect(() => {
+    const refresh = () => {
+      const el = editorRef.current;
+      if (!el) return;
+      const sel = document.getSelection();
+      if (!sel || sel.rangeCount === 0) {
+        setFormatState({ bold: false, italic: false, underline: false, strike: false });
+        return;
+      }
+      const anchor = sel.anchorNode as Node | null;
+      const isInside = anchor ? el.contains(anchor) : false;
+      if (!isInside) {
+        setFormatState({ bold: false, italic: false, underline: false, strike: false });
+        return;
+      }
+      try {
+        const bold = document.queryCommandState("bold");
+        const italic = document.queryCommandState("italic");
+        const underline = document.queryCommandState("underline");
+        const strike = document.queryCommandState("strikeThrough");
+        setFormatState({ bold, italic, underline, strike });
+      } catch {
+        // ignore
+      }
+    };
+
+    const handleSelectionChange = () => refresh();
+    document.addEventListener("selectionchange", handleSelectionChange);
+    const el = editorRef.current;
+    el?.addEventListener("keyup", refresh);
+    el?.addEventListener("mouseup", refresh);
+    // initial
+    refresh();
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      el?.removeEventListener("keyup", refresh);
+      el?.removeEventListener("mouseup", refresh);
+    };
+  }, []);
 
   return (
     <div className="relative">
@@ -153,9 +195,12 @@ export default function TextInputPanel({
                   onClick={() => {
                     document.execCommand("bold");
                   }}
-                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  className={`inline-flex items-center justify-center h-10 w-10 rounded transition-colors ${
+                    formatState.bold ? "bg-gray-300" : "hover:bg-gray-200"
+                  }`}
                   title="Bold"
                   aria-label="Bold"
+                  aria-pressed={formatState.bold}
                 >
                   <Bold className="h-4 w-4 text-gray-700" />
                 </button>
@@ -164,9 +209,12 @@ export default function TextInputPanel({
                   onClick={() => {
                     document.execCommand("italic");
                   }}
-                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  className={`inline-flex items-center justify-center h-10 w-10 rounded transition-colors ${
+                    formatState.italic ? "bg-gray-300" : "hover:bg-gray-200"
+                  }`}
                   title="Italic"
                   aria-label="Italic"
+                  aria-pressed={formatState.italic}
                 >
                   <Italic className="h-4 w-4 text-gray-700" />
                 </button>
@@ -175,9 +223,12 @@ export default function TextInputPanel({
                   onClick={() => {
                     document.execCommand("strikeThrough");
                   }}
-                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  className={`inline-flex items-center justify-center h-10 w-10 rounded transition-colors ${
+                    formatState.strike ? "bg-gray-300" : "hover:bg-gray-200"
+                  }`}
                   title="Strikethrough"
                   aria-label="Strikethrough"
+                  aria-pressed={formatState.strike}
                 >
                   <Strikethrough className="h-4 w-4 text-gray-700" />
                 </button>
@@ -196,9 +247,12 @@ export default function TextInputPanel({
                       }
                     }
                   }}
-                  className="inline-flex items-center justify-center h-10 w-10 rounded hover:bg-gray-200 transition-colors"
+                  className={`inline-flex items-center justify-center h-10 w-10 rounded transition-colors ${
+                    formatState.underline ? "bg-gray-300" : "hover:bg-gray-200"
+                  }`}
                   title="Underline"
                   aria-label="Underline"
+                  aria-pressed={formatState.underline}
                 >
                   <Underline className="h-4 w-4 text-gray-700" />
                 </button>
