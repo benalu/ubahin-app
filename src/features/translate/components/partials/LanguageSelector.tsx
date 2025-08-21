@@ -35,13 +35,20 @@ function LangSelect({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="justify-between w-[180px]">
+        <Button
+          variant="outline"
+          className="justify-between w-full sm:w-[180px] min-w-0"
+        >
           <span className="truncate">
             {safeOptions.find(o => o.code === value)?.label ?? placeholder}
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0 w-[280px]">
+      <PopoverContent
+        align="center"
+        sideOffset={6}
+        className="p-0 w-[92vw] max-w-sm sm:w-[280px]"
+      >
         <Command>
           <CommandInput placeholder="Cari bahasa..." />
           <CommandList>
@@ -73,35 +80,42 @@ export default function LanguageSelector({
   const sourceOptions = withAuto(options); // pastikan 'auto' tunggal
 
   return (
-    <div className="flex items-center justify-center gap-2 flex-wrap bg-white/60 backdrop-blur rounded-2xl border p-2">
-      <LangSelect
-        value={sourceLang}
-        onChange={onSourceChange}
-        options={sourceOptions}
-        placeholder="Auto-Detect"
-      />
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="rounded-full"
-        onClick={() => {
-          if (disableSwap) return;
-          const s = sourceLang;
-          onSourceChange(targetLang);
-          onTargetChange(s);
-        }}
-        disabled={disableSwap}
-        title="Swap (Ctrl/Cmd+K)"
-      >
-        <ArrowLeftRight className="h-5 w-5" />
-      </Button>
-      <LangSelect
-        value={targetLang}
-        onChange={onTargetChange}
-        options={options}
-        placeholder="Pilih bahasa"
-      />
+    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 bg-white/60 backdrop-blur rounded-2xl border p-2 w-full">
+      <div className="min-w-0">
+        <LangSelect
+          value={sourceLang}
+          onChange={onSourceChange}
+          options={sourceOptions}
+          placeholder="Auto-Detect"
+        />
+      </div>
+      <div className="flex justify-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-full"
+          onClick={() => {
+            if (disableSwap) return;
+            const s = sourceLang;
+            onSourceChange(targetLang);
+            onTargetChange(s);
+          }}
+          disabled={disableSwap}
+          title="Swap (Ctrl/Cmd+K)"
+          aria-label="Tukar bahasa"
+        >
+          <ArrowLeftRight className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="min-w-0">
+        <LangSelect
+          value={targetLang}
+          onChange={onTargetChange}
+          options={options}
+          placeholder="Pilih bahasa"
+        />
+      </div>
     </div>
   );
 }
