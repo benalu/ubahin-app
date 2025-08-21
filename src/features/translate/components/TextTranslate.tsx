@@ -93,6 +93,7 @@ export default function TextTranslate({
           charCount={charCount}
           maxChars={MAX_CHARS}
           isOverLimit={isOverLimit}
+          stickyActionBar
         />
 
         <TextOutputPanel
@@ -102,6 +103,7 @@ export default function TextTranslate({
           onCopy={() => void copyToClipboard(outputText, "output")}
           onSpeak={handleSpeak}
           isCopied={copiedSide === "output"}
+          stickyActionBar
         />
       </div>
     </div>

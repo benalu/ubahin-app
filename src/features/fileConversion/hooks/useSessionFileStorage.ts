@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { UploadedFile } from '../../../types/type';
 import { createLoadingState } from '../lib/loadingUtils';
+import type { LoadingState } from '../lib/loadingUtils';
 
 const SESSION_KEY = 'ubahin_files_session';
 const SESSION_EXPIRY = 60 * 60 * 1000; // 1 jam (seperti vert.sh)
@@ -19,7 +20,7 @@ interface SessionFileData {
   downloadUrl?: string;
   outputFormat: string;
   jobId?: string;
-  loadingState: any;
+  loadingState: LoadingState;
   convertedAt?: string;
   errorMessage?: string;
   previewUrl?: string;

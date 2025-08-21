@@ -15,7 +15,7 @@ interface PreviewCacheItem {
 }
 
 // Global cache untuk previews
-let previewCache = new Map<string, PreviewCacheItem>();
+const previewCache = new Map<string, PreviewCacheItem>();
 
 // Cleanup previews yang terlalu lama (1 jam)
 const CACHE_EXPIRY = 60 * 60 * 1000; // 1 jam
@@ -40,7 +40,7 @@ function getFileKey(file: File): string {
 }
 
 export function useFilePreviewCache() {
-  const cleanupTimerRef = useRef<NodeJS.Timeout>();
+  const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Setup periodic cleanup

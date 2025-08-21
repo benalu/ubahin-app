@@ -3,6 +3,7 @@
 
 import { Check, Copy, Volume2 } from "lucide-react";
 import ActionBar from "./text/ActionBar";
+import FormattedText from "./text/FormattedText";
 
 type Props = {
   text: string;
@@ -52,7 +53,7 @@ export default function TextOutputPanel({
               <div className="h-4 rounded bg-gray-200 w-10/12"></div>
             </div>
           ) : hasText ? (
-            <div className="text-gray-900 whitespace-pre-wrap">{text}</div>
+            <FormattedText text={text} className="text-gray-900 whitespace-pre-wrap" />
           ) : errorMsg ? (
             <p className="text-red-600">{errorMsg}</p>
           ) : (
