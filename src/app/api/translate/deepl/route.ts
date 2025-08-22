@@ -57,6 +57,10 @@ export async function POST(req: Request) {
     const mappedSource = mapUiLangToDeepL(sourceLang ?? "", "source");
     if (mappedSource) params.set("source_lang", mappedSource);
 
+    // Preserve markup tags (bold/italic/underline/strike) so they are not translated/removed
+    params.set("tag_handling", "xml");
+    params.set("preserve_formatting", "1");
+
     const res = await fetchWithTimeout(
       DEEPL_ENDPOINT,
       {

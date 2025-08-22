@@ -67,7 +67,7 @@ export default function DocFileList({
   if (files.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-gray-500 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-2xl border border-gray-900 bg-white overflow-hidden">
       <FileListHeader count={files.length} totalBytes={totalBytes} />
 
       <div className="bg-gray-50">

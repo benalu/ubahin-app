@@ -55,15 +55,17 @@ export default function FileTranslate({
   const hasFiles = files.length > 0;
 
   return (
-    <div className="space-y-6">
-      <LanguageSelector
-        sourceLang={sourceLang}
-        targetLang={targetLang}
-        onSourceChange={onSourceChange}
-        onTargetChange={onTargetChange}
-        options={languageOptions}
-        disableSwap={sourceLang === "auto"}
-      />
+    <div className="space-y-5">
+      <div className="mx-auto w-[min(82vw,520px)] rounded-xl border border-gray-900 bg-white/90 overflow-hidden">
+        <LanguageSelector
+          sourceLang={sourceLang}
+          targetLang={targetLang}
+          onSourceChange={onSourceChange}
+          onTargetChange={onTargetChange}
+          options={languageOptions}
+          disableSwap={sourceLang === "auto"}
+        />
+      </div>
 
       {!hasFiles ? (
         /* ——— Belum ada file: dropzone full width */
@@ -79,10 +81,10 @@ export default function FileTranslate({
           />
         </section>
       ) : (
-        /* ——— Ada file: mobile = kolom rapat, desktop = row lega */
-        <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start md:gap-4">
+        /* ——— Ada file: mobile = jarak rapat, desktop = tetap lega */
+        <div className="flex flex-col gap-1 sm:gap-2 md:flex-row md:items-start md:gap-4">
           {/* Kiri (lebih besar), tinggi tidak ikut list */}
-          <section className="rounded-2xl bg-white p-0 min-h-[360px] md:flex-1">
+          <section className="rounded-2xl bg-white p-0 min-h-[320px] sm:min-h-[360px] md:flex-1">
             <DocDropArea
               accept={DEEPL_DOC_ACCEPT}
               fileInputRef={fileInputRef}
@@ -94,8 +96,8 @@ export default function FileTranslate({
             />
           </section>
 
-          {/* Kanan: File list dibatasi tinggi + tombol Add (tanpa mt-4 di mobile) */}
-          <aside className="md:w-[420px] lg:w-[480px] xl:w-[520px] space-y-3">
+          {/* Kanan: File list dibatasi tinggi + tombol Add (rapat di mobile) */}
+          <aside className="mt-0 md:mt-0 md:w-[420px] lg:w-[480px] xl:w-[490px] space-y-4 sm:space-y-4">
             <DocFileList
               files={files}
               jobs={jobs}
@@ -107,11 +109,11 @@ export default function FileTranslate({
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
               disabled={working}
-              className="w-full justify-center cursor-pointer"
+              className="w-full justify-center cursor-pointer rounded-xl border border-gray-900 bg-white"
               title="Tambah Dokumen Lainnya"
               aria-label="Tambah Dokumen Lainnya"
             >
-              <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
+              <Upload className="h-4 w-4 mr-3" aria-hidden="true" />
               Tambah Dokumen Lainnya
             </Button>
           </aside>

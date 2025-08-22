@@ -22,6 +22,17 @@ export default function DocActions({
 }: DocActionsProps) {
   const canAct = !working && count > 0;
 
+  // Label tombol translate:
+  // - 0 file  -> "Translate"
+  // - 1 file  -> "Translate 1 File"
+  // - n files -> "Translate n Files"
+  // - saat working -> "Working…"
+  const translateLabel = working
+    ? "Working…"
+    : count > 0
+    ? `Translate ${count} File${count > 1 ? "s" : ""}`
+    : "Translate";
+
   return (
     <div className={cn("flex gap-3", className)}>
       <Button
@@ -40,11 +51,11 @@ export default function DocActions({
         onClick={() => void onTranslateAll()}
         disabled={!canAct}
         className={cn(canAct && "cursor-pointer")}
-        title={working ? "Translating…" : "Translate all selected files"}
-        aria-label={working ? "Translating" : "Translate all selected files"}
+        title={translateLabel}
+        aria-label={translateLabel}
       >
         <Play className="h-4 w-4 mr-2" aria-hidden="true" />
-        {working ? "Working…" : "Translate"}
+        {translateLabel}
       </Button>
     </div>
   );

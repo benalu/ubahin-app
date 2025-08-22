@@ -29,14 +29,24 @@ export default function TextTranslate({
 }: Props) {
   const [copiedSide, setCopiedSide] = useState<"input" | "output" | null>(null);
 
-  // Filter 'auto' di caller (Bar juga punya dedup sebagai guard kedua)
+  // opsi bahasa tanpa "auto"
   const languages = useMemo(
-    () => LANGUAGES.filter(l => l.value !== "auto").map(l => ({ code: l.value, label: l.label })),
+    () =>
+      LANGUAGES.filter((l) => l.value !== "auto").map((l) => ({
+        code: l.value,
+        label: l.label,
+      })),
     []
   );
 
-  const { inputText, outputText, errorMsg, loading, handleTextInput, clearAll } =
-    useTextTranslate({ sourceLang, targetLang, maxChars: MAX_CHARS });
+  const {
+    inputText,
+    outputText,
+    errorMsg,
+    loading,
+    handleTextInput,
+    clearAll,
+  } = useTextTranslate({ sourceLang, targetLang, maxChars: MAX_CHARS });
 
   const copyToClipboard = useCallback(async (text: string, side: "input" | "output") => {
     if (!text) return;
@@ -55,7 +65,7 @@ export default function TextTranslate({
   const charCount = inputText.length;
   const isOverLimit = charCount > MAX_CHARS;
 
-  // Shortcut: Ctrl/Cmd + K
+  // Shortcut: Ctrl/Cmd + K untuk swap
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -73,36 +83,45 @@ export default function TextTranslate({
   }, [onSwap, onSourceChange, onTargetChange, sourceLang, targetLang]);
 
   return (
-    <div className="space-y-6">
-      <LanguageSelector
-        sourceLang={sourceLang}
-        targetLang={targetLang}
-        onSourceChange={onSourceChange}
-        onTargetChange={onTargetChange}
-        options={languages}
-        disableSwap={sourceLang === "auto"}
-      />
+    <div className="w-full">
+      {/* CARD: LanguageSelector + Panels menyatu */}
+      <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white">
+        {/* Header Language Selector */}
+        <div className="border-b border-gray-200 bg-white">
+          <LanguageSelector
+            sourceLang={sourceLang}
+            targetLang={targetLang}
+            onSourceChange={onSourceChange}
+            onTargetChange={onTargetChange}
+            options={languages}
+            disableSwap={sourceLang === "auto"}
+          />
+        </div>
 
-      <div className="grid gap-0 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 border border-gray-200 rounded-xl overflow-hidden">
-        <TextInputPanel
-          value={inputText}
-          onChange={handleTextInput}
-          onCopy={() => void copyToClipboard(inputText, "input")}
-          onClear={clearAll}
-          isCopied={copiedSide === "input"}
-          charCount={charCount}
-          maxChars={MAX_CHARS}
-          isOverLimit={isOverLimit}
-        />
+        {/* Konten: Input | Output (stack di mobile, berdampingan di desktop) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 divide-y divide-gray-100 lg:divide-y-0 lg:divide-x">
+          <TextInputPanel
+            value={inputText}
+            onChange={handleTextInput}
+            onCopy={() => void copyToClipboard(inputText, "input")}
+            onClear={clearAll}
+            isCopied={copiedSide === "input"}
+            charCount={charCount}
+            maxChars={MAX_CHARS}
+            isOverLimit={isOverLimit}
+            stickyActionBar
+          />
 
-        <TextOutputPanel
-          text={outputText}
-          loading={loading}
-          errorMsg={errorMsg}
-          onCopy={() => void copyToClipboard(outputText, "output")}
-          onSpeak={handleSpeak}
-          isCopied={copiedSide === "output"}
-        />
+          <TextOutputPanel
+            text={outputText}
+            loading={loading}
+            errorMsg={errorMsg}
+            onCopy={() => void copyToClipboard(outputText, "output")}
+            onSpeak={handleSpeak}
+            isCopied={copiedSide === "output"}
+            stickyActionBar
+          />
+        </div>
       </div>
     </div>
   );

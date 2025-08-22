@@ -128,7 +128,7 @@ export default function DocFileListItem({ file, index, job, onRemove }: Props) {
       : undefined;
 
   return (
-    <div className="group rounded-lg border border-gray-200 bg-white p-3 transition-colors hover:bg-gray-50">
+    <div className="group rounded-lg border border-gray-300 bg-white p-3 transition-colors hover:bg-gray-50">
       <div className="flex items-center gap-3">
         <FileTypeIcon fileName={file.name} className="h-5 w-5 text-gray-600" />
 
