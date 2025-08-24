@@ -1,22 +1,12 @@
+// src/app/api/translate/deepl/document/route.ts
+
 import { NextResponse } from "next/server";
 import { assertAllowedOrigin, assertFileSafe, fetchWithTimeout } from "@/lib/security/server";
+import { normalizeUiCode, toDeepLCode } from "@/lib/constants/lang";
 
 export const runtime = "nodejs";
 
 const DEEPL_DOC_ENDPOINT = "https://api.deepl.com/v2/document";
-
-function mapUiLangToDeepL(lang: string, kind: "source" | "target"): string | undefined {
-  if (!lang || lang === "auto") return undefined;
-  const lc = lang.toLowerCase();
-  const table: Record<string, string> = {
-    en: kind === "target" ? "EN-US" : "EN",
-    pt: kind === "target" ? "PT-PT" : "PT",
-    zh: kind === "target" ? "ZH-HANS" : "ZH",
-    es: "ES", fr: "FR", de: "DE", ja: "JA", ko: "KO", ru: "RU", ar: "AR",
-    id: "ID", it: "IT", nl: "NL", pl: "PL", tr: "TR", sv: "SV",
-  };
-  return table[lc] ?? lc.toUpperCase();
-}
 
 type UploadResponse = { document_id: string; document_key: string };
 
@@ -29,27 +19,41 @@ export async function POST(req: Request) {
 
     const form = await req.formData();
     const file = form.get("file");
-    const targetLang = (form.get("targetLang") as string) || "";
-    const sourceLang = (form.get("sourceLang") as string) || "";
+    const targetLangRaw = (form.get("targetLang") as string) || "";
+    const sourceLangRaw = (form.get("sourceLang") as string) || "";
 
-    if (!(file instanceof File)) return NextResponse.json({ error: "file is required" }, { status: 400 });
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "file is required" }, { status: 400 });
+    }
     assertFileSafe(file, 25);
-    if (!targetLang) return NextResponse.json({ error: "targetLang is required" }, { status: 400 });
+    if (!targetLangRaw) {
+      return NextResponse.json({ error: "targetLang is required" }, { status: 400 });
+    }
 
-    const mappedTarget = mapUiLangToDeepL(targetLang, "target");
-    if (!mappedTarget) return NextResponse.json({ error: "Unsupported/invalid target language" }, { status: 400 });
-    const mappedSource = mapUiLangToDeepL(sourceLang, "source");
+    // Normalisasi UI → DeepL
+    const uiTarget = normalizeUiCode(targetLangRaw);
+    const uiSource = normalizeUiCode(sourceLangRaw);
+    const mappedTarget = toDeepLCode(uiTarget, "target"); // ✅ ui dulu, lalu kind
+    const mappedSource = uiSource === "auto" ? undefined : toDeepLCode(uiSource, "source");
+
+    if (!mappedTarget) {
+      return NextResponse.json({ error: "Unsupported/invalid target language" }, { status: 400 });
+    }
 
     const deeplForm = new FormData();
     deeplForm.set("file", file);
     deeplForm.set("target_lang", mappedTarget);
     if (mappedSource) deeplForm.set("source_lang", mappedSource);
 
-    const res = await fetchWithTimeout(DEEPL_DOC_ENDPOINT, {
-      method: "POST",
-      headers: { Authorization: `DeepL-Auth-Key ${apiKey}` },
-      body: deeplForm,
-    }, 30000);
+    const res = await fetchWithTimeout(
+      DEEPL_DOC_ENDPOINT,
+      {
+        method: "POST",
+        headers: { Authorization: `DeepL-Auth-Key ${apiKey}` },
+        body: deeplForm,
+      },
+      30000
+    );
 
     const ct = res.headers.get("content-type") || "";
     const isJson = ct.toLowerCase().includes("application/json");
@@ -68,3 +72,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal error", detail: message }, { status });
   }
 }
+
+

@@ -21,12 +21,6 @@ export default function DocActions({
   className,
 }: DocActionsProps) {
   const canAct = !working && count > 0;
-
-  // Label tombol translate:
-  // - 0 file  -> "Translate"
-  // - 1 file  -> "Translate 1 File"
-  // - n files -> "Translate n Files"
-  // - saat working -> "Working…"
   const translateLabel = working
     ? "Working…"
     : count > 0

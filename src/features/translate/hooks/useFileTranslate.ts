@@ -1,10 +1,11 @@
-// src/features/translate/hooks/useFileTranslate.tsW
+// src/features/translate/hooks/useFileTranslate.tsx
 "use client";
 
 import { useCallback, useState } from "react";
 import { toastError, toastSuccess } from "@/lib/errors/notify";
 import { createFileError, getErrorMessage } from "@/lib/errors/errorMessages";
 import { isDeepLDocName } from "@/lib/constants/translateDocs";
+import { normalizeUiCode } from "@/lib/constants/lang";
 
 type LangCode = string;
 
@@ -107,11 +108,14 @@ export function useFileTranslate(opts: {
     try {
       setJob(i, { status: "uploading", error: undefined, secondsRemaining: undefined });
 
+      const uiTarget = normalizeUiCode(targetLang);
+      const uiSource = normalizeUiCode(sourceLang);
+
       // 1) Upload
       const fd = new FormData();
       fd.set("file", file);
-      fd.set("targetLang", targetLang);
-      if (sourceLang !== "auto") fd.set("sourceLang", sourceLang);
+      fd.set("targetLang", uiTarget);
+      if (uiSource !== "auto") fd.set("sourceLang", uiSource);
 
       const upRes = await fetch("/api/translate/deepl/document", { method: "POST", body: fd });
       const upCT = upRes.headers.get("content-type") || "";

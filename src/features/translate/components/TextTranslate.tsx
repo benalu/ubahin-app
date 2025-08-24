@@ -2,11 +2,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import LanguageSelector from "./partials/LanguageSelector";
+import LanguageSelector from "@/features/translate/components/partials/LanguageSelector";
 import TextInputPanel from "./partials/TextInputPanel";
 import TextOutputPanel from "./partials/TextOutputPanel";
 import { useTextTranslate } from "../hooks/useTextTranslate";
-import { LANGUAGES } from "@/features/translate/constants/languages";
 
 type LangCode = string;
 
@@ -29,16 +28,6 @@ export default function TextTranslate({
 }: Props) {
   const [copiedSide, setCopiedSide] = useState<"input" | "output" | null>(null);
 
-  // opsi bahasa tanpa "auto"
-  const languages = useMemo(
-    () =>
-      LANGUAGES.filter((l) => l.value !== "auto").map((l) => ({
-        code: l.value,
-        label: l.label,
-      })),
-    []
-  );
-
   const {
     inputText,
     outputText,
@@ -58,7 +47,8 @@ export default function TextTranslate({
   const handleSpeak = useCallback(() => {
     if (!outputText) return;
     const utter = new SpeechSynthesisUtterance(outputText);
-    utter.lang = targetLang; // map ke "en-US" dsb bila perlu
+    // Catatan: kalau mau presisi, map targetLang -> BCP-47 (mis. en-us, pt-br) sebelum set.
+    utter.lang = targetLang;
     speechSynthesis.speak(utter);
   }, [outputText, targetLang]);
 
@@ -93,7 +83,6 @@ export default function TextTranslate({
             targetLang={targetLang}
             onSourceChange={onSourceChange}
             onTargetChange={onTargetChange}
-            options={languages}
             disableSwap={sourceLang === "auto"}
           />
         </div>

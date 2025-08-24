@@ -1,14 +1,13 @@
 // src/features/translate/components/FileTranslate.tsx
 "use client";
 
-import { useMemo, useRef } from "react";
-import LanguageSelector from "./partials/LanguageSelector";
+import { useRef } from "react";
+import LanguageSelector from "@/features/translate/components/partials/LanguageSelector";
 import DocDropArea from "./partials/document/DocDropArea";
 import DocFileList from "./partials/document/DocFileList";
 import DocToolbar from "./partials/document/DocToolbar";
 import { useFileTranslate } from "../hooks/useFileTranslate";
 import { DEEPL_DOC_ACCEPT } from "@/lib/constants/translateDocs";
-import { LANGUAGES } from "@/features/translate/constants/languages";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 
@@ -28,15 +27,6 @@ export default function FileTranslate({
   onTargetChange,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const languageOptions = useMemo(
-    () =>
-      LANGUAGES.filter((l) => l.value !== "auto").map((l) => ({
-        code: l.value,
-        label: l.label,
-      })),
-    []
-  );
 
   const {
     files,
@@ -62,13 +52,12 @@ export default function FileTranslate({
           targetLang={targetLang}
           onSourceChange={onSourceChange}
           onTargetChange={onTargetChange}
-          options={languageOptions}
           disableSwap={sourceLang === "auto"}
         />
       </div>
 
       {!hasFiles ? (
-        /* ——— Belum ada file: dropzone full width */
+        // ——— Belum ada file: dropzone full width
         <section className="rounded-2xl bg-white p-0 min-h-[360px]">
           <DocDropArea
             accept={DEEPL_DOC_ACCEPT}
@@ -81,7 +70,7 @@ export default function FileTranslate({
           />
         </section>
       ) : (
-        /* ——— Ada file: mobile = jarak rapat, desktop = tetap lega */
+        // ——— Ada file: mobile = jarak rapat, desktop = tetap lega
         <div className="flex flex-col gap-1 sm:gap-2 md:flex-row md:items-start md:gap-4">
           {/* Kiri (lebih besar), tinggi tidak ikut list */}
           <section className="rounded-2xl bg-white p-0 min-h-[320px] sm:min-h-[360px] md:flex-1">
@@ -96,7 +85,7 @@ export default function FileTranslate({
             />
           </section>
 
-          {/* Kanan: File list dibatasi tinggi + tombol Add (rapat di mobile) */}
+          {/* Kanan: File list + tombol Add */}
           <aside className="mt-0 md:mt-0 md:w-[420px] lg:w-[480px] xl:w-[490px] space-y-4 sm:space-y-4">
             <DocFileList
               files={files}

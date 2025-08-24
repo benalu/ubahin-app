@@ -1,23 +1,12 @@
 // src/app/api/translate/deepl/route.ts
+
 import { NextResponse } from "next/server";
 import { assertAllowedOrigin, assertTextLimit, fetchWithTimeout } from "@/lib/security/server";
 import { recordUsage, willExceedDailyLimit } from "@/lib/usage/usage";
+import { normalizeUiCode, toDeepLCode } from "@/lib/constants/lang";
 
 const PROVIDER = "deepl";
 const DEEPL_ENDPOINT = "https://api.deepl.com/v2/translate";
-
-function mapUiLangToDeepL(lang: string, kind: "source" | "target"): string | undefined {
-  if (!lang || lang === "auto") return undefined;
-  const lc = lang.toLowerCase();
-  const table: Record<string, string> = {
-    en: kind === "target" ? "EN-US" : "EN",
-    pt: kind === "target" ? "PT-PT" : "PT",
-    zh: kind === "target" ? "ZH-HANS" : "ZH",
-    es: "ES", fr: "FR", de: "DE", ja: "JA", ko: "KO", ru: "RU", ar: "AR",
-    id: "ID", it: "IT", nl: "NL", pl: "PL", tr: "TR", sv: "SV",
-  };
-  return table[lc] ?? lc.toUpperCase();
-}
 
 type DeepLTranslateResponse = {
   translations: Array<{ detected_source_language?: string; text: string }>;
@@ -40,7 +29,6 @@ export async function POST(req: Request) {
 
     const list = Array.isArray(text) ? text : [text];
     for (const t of list) assertTextLimit(t);
-
     units = list.reduce((acc, t) => acc + (t?.length ?? 0), 0);
 
     if (await willExceedDailyLimit(PROVIDER, units)) {
@@ -50,14 +38,20 @@ export async function POST(req: Request) {
     const params = new URLSearchParams();
     for (const t of list) params.append("text", t);
 
-    const mappedTarget = mapUiLangToDeepL(targetLang, "target");
-    if (!mappedTarget) return NextResponse.json({ error: "Unsupported/invalid target language" }, { status: 400 });
-    params.set("target_lang", mappedTarget);
+    // Normalisasi UI → DeepL
+    const uiTarget = normalizeUiCode(targetLang);
+    const uiSource = normalizeUiCode(sourceLang ?? "");
+    const mappedTarget = toDeepLCode(uiTarget, "target"); // ✅ ui dulu, lalu kind
+    const mappedSource = uiSource === "auto" ? undefined : toDeepLCode(uiSource, "source");
 
-    const mappedSource = mapUiLangToDeepL(sourceLang ?? "", "source");
+    if (!mappedTarget) {
+      return NextResponse.json({ error: "Unsupported/invalid target language" }, { status: 400 });
+    }
+
+    params.set("target_lang", mappedTarget);
     if (mappedSource) params.set("source_lang", mappedSource);
 
-    // Preserve markup tags (bold/italic/underline/strike) so they are not translated/removed
+    // Jaga tag formatting (bold/italic/underline/strike)
     params.set("tag_handling", "xml");
     params.set("preserve_formatting", "1");
 
@@ -97,5 +91,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal error", detail: message }, { status });
   }
 }
+
 
 

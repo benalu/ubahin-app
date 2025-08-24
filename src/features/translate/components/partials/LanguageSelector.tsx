@@ -13,40 +13,53 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { getLangData } from "@/features/translate/constants/languages";
+
+import {
+  normalizeUiCode,
+  getDisplayLabelFor,
+  buildSourceOptions,
+  buildTargetOptions,
+} from "@/lib/constants/lang";
+
+import { useSortedLanguages, getColumnLayout } from "@/utils/languageSorting";
 
 type Option = { code: string; label: string };
 
+const toLower = (s: string) => (s || "").toLowerCase();
+
 function dedupByCode(list: Option[]) {
   const m = new Map<string, Option>();
-  for (const o of list) if (!m.has(o.code)) m.set(o.code, o);
+  for (const o of list) {
+    const key = toLower(o.code);
+    if (!m.has(key)) m.set(key, { ...o, code: key });
+  }
   return Array.from(m.values());
 }
 
-function withAuto(options: Option[], autoLabel = "Deteksi Bahasa") {
-  const hasAuto = options.some((o) => o.code === "auto");
-  const merged = hasAuto ? options : [{ code: "auto", label: autoLabel }, ...options];
-  return dedupByCode(merged);
+function resolvePopularForMode(raw: string, all: Map<string, Option>, mode: "source" | "target") {
+  const key = toLower(raw);
+  if (mode === "target") {
+    if (key === "en") return all.get("en-us") ? "en-us" : (all.get("en-gb") ? "en-gb" : "en");
+    if (key === "pt") return all.get("pt-br") ? "pt-br" : (all.get("pt-pt") ? "pt-pt" : "pt");
+  }
+  return normalizeUiCode(key, mode);
 }
 
-const POPULAR_CODES = new Set(["en", "id", "es", "fr", "de", "ja", "ko", "zh", "pt", "ru", "ar"]);
-
-/* ------------------------- LangSelect (memoized) ------------------------- */
-
+/* ------------------------- LangSelect ------------------------- */
 type LangSelectProps = {
+  mode: "source" | "target";
   value: string;
   onChange: (v: string) => void;
   options: Option[];
   placeholder: string;
-  // Sumber: jika open & value === 'auto', ganti label dan highlight biru
   openLabelForAuto?: string;
   highlightAutoWhenOpen?: boolean;
-  // Umum: jika open (apa pun valuenya), ganti label dan highlight biru
   openLabel?: string;
   highlightWhenOpen?: boolean;
 };
 
 const LangSelect = memo(function LangSelect({
+  mode,
   value,
   onChange,
   options,
@@ -57,35 +70,42 @@ const LangSelect = memo(function LangSelect({
   highlightWhenOpen,
 }: LangSelectProps) {
   const [open, setOpen] = useState(false);
-
   const safeOptions = useMemo(() => dedupByCode(options), [options]);
 
-  const { popular, rest } = useMemo(() => {
-    const popular: Option[] = [];
-    const rest: Option[] = [];
-    for (const o of safeOptions) (POPULAR_CODES.has(o.code) ? popular : rest).push(o);
-    return { popular, rest };
-  }, [safeOptions]);
+  const byKey = useMemo(() => {
+    const m = new Map<string, Option>();
+    for (const o of safeOptions) {
+      const k = normalizeUiCode(o.code, mode);
+      if (!m.has(k)) m.set(k, { ...o, code: k });
+    }
+    return m;
+  }, [safeOptions, mode]);
 
-  const currentLabel = useMemo(
-    () => safeOptions.find((o) => o.code === value)?.label ?? placeholder,
-    [safeOptions, value, placeholder]
-  );
+  
+  const allForGroup = useMemo(() => {
+    const keys = Array.from(byKey.keys());
+    const filteredKeys = mode === "target" ? keys.filter((k) => k !== "auto") : keys; 
+    return filteredKeys.map((k) => byKey.get(k)!);
+  }, [byKey, mode]);
 
-  const isAuto = value === "auto";
+ 
+  const rest = useSortedLanguages(allForGroup);
+
+  const curValue = normalizeUiCode(value, mode);
+  const isAuto = curValue === "auto";
+  const currentLabel = getDisplayLabelFor(curValue);
+
   const isBlueAuto = !!(open && isAuto && highlightAutoWhenOpen);
   const isBlueAny = !!(open && highlightWhenOpen);
   const isBlue = isBlueAuto || isBlueAny;
+  const displayLabel = (isBlueAny && openLabel) || (isBlueAuto && openLabelForAuto) || currentLabel;
 
-  const displayLabel =
-    (isBlueAny && openLabel) ||
-    (isBlueAuto && openLabelForAuto) ||
-    currentLabel;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const layout = getColumnLayout(rest.length, isMobile);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        {/* Mobile: full width; Desktop: auto width (tanpa min-width supaya hover pas ke konten) */}
         <Button
           type="button"
           variant="ghost"
@@ -95,13 +115,11 @@ const LangSelect = memo(function LangSelect({
             "justify-between sm:justify-start sm:gap-2",
             "border-none shadow-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
             "cursor-pointer flex items-center",
-            isBlue
-              ? "bg-blue-200 text-blue hover:bg-blue-200"
-              : "bg-transparent hover:bg-gray-200 text-gray-600",
+            isBlue ? "bg-blue-200 text-blue hover:bg-blue-200" : "bg-transparent hover:bg-gray-200 text-gray-600",
           ].join(" ")}
         >
           <span className="truncate text-[15px] sm:text-[17px] font-medium">
-            {displayLabel}
+            {displayLabel || placeholder}
           </span>
           <ChevronDown
             className={[
@@ -116,54 +134,61 @@ const LangSelect = memo(function LangSelect({
       {open && (
         <PopoverContent
           align="center"
+          side={isMobile ? "bottom" : "bottom"} 
           sideOffset={6}
-          className="p-0 w-[92vw] max-w-md sm:w-[240px]"
+          avoidCollisions={isMobile ? false : true}
+          collisionPadding={isMobile ? 0 : 8}
+          sticky="always"
+          className={`
+                p-1
+                ${isMobile ? 'w-[95vw] max-w-sm' : 'w-[420px] max-w-lg'}
+              `}
         >
           <Command>
             <CommandInput placeholder="Cari bahasa…" />
-            <CommandList>
+            <CommandList className={isMobile ? "max-h-[60vh]" : "max-h-[400px]"}>
               <CommandEmpty>Tidak ditemukan</CommandEmpty>
 
-              {popular.length > 0 && (
-                <CommandGroup heading="Populer">
-                  {popular.map((o) => (
-                    <CommandItem
-                      key={o.code}
-                      onSelect={() => {
-                        onChange(o.code);
-                        setOpen(false);
-                      }}
-                      aria-selected={o.code === value}
-                      className="hover:bg-gray-50 transition-colors duration-150 py-2 cursor-pointer"
-                    >
-                      <span className="mr-2 h-5 w-5 grid place-items-center rounded-full bg-gray-50 border text-xs">
-                        {getLangData(o.code).flag}
-                      </span>
-                      <span className="flex-1 truncate text-[15px]">{o.label}</span>
-                      {o.code === value && <Check className="h-4 w-4 text-green-600" />}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-
+              
               <CommandGroup heading="Semua bahasa">
-                {rest.map((o) => (
-                  <CommandItem
-                    key={o.code}
-                    onSelect={() => {
-                      onChange(o.code);
-                      setOpen(false);
-                    }}
-                    aria-selected={o.code === value}
-                    className="hover:bg-gray-50 transition-colors duration-150 py-2 cursor-pointer"
-                  >
-                    <span className="mr-2 h-5 w-5 grid place-items-center rounded-full bg-gray-50 border text-xs">
-                      {getLangData(o.code).flag}
-                    </span>
-                    <span className="flex-1 truncate text-[15px]">{o.label}</span>
-                    {o.code === value && <Check className="h-4 w-4 text-green-600" />}
-                  </CommandItem>
-                ))}
+                <div className={`relative grid ${layout.className}`}>
+                  
+                  {!isMobile && layout.columns > 1 &&
+                    Array.from({ length: layout.columns - 1 }).map((_, i) => (
+                      <div
+                        key={`vline-${i}`}
+                        aria-hidden
+                        className="pointer-events-none absolute top-0 bottom-0 w-px bg-gray-200"
+                        style={{ left: `${((i + 1) / layout.columns) * 100}%` }}
+                      />
+                    ))}
+
+                  {rest.map((o) => {
+                    const code = o.code;
+                    const selected = code === curValue;
+                    const label = getDisplayLabelFor(code);
+                    return (
+                      <CommandItem
+                        key={code}
+                        onSelect={() => {
+                          onChange(code);
+                          setOpen(false);
+                        }}
+                        aria-selected={selected}
+                        className={`${isMobile ? "py-2.5" : "py-2"} hover:bg-gray-50 transition-colors cursor-pointer`}
+                      >
+                         <div className="relative flex items-center w-full">
+                          {selected && (
+                            <Check
+                              className="absolute -left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600 pointer-events-none"
+                            />
+                          )}
+                          <span className="text-[15px] whitespace-nowrap">{label}</span>
+                        </div>
+                    </CommandItem>
+                    );
+                  })}
+                </div>
               </CommandGroup>
             </CommandList>
           </Command>
@@ -174,13 +199,11 @@ const LangSelect = memo(function LangSelect({
 });
 
 /* ---------------------------- LanguageSelector --------------------------- */
-
 type Props = {
   sourceLang: string;
   targetLang: string;
   onSourceChange: (v: string) => void;
   onTargetChange: (v: string) => void;
-  options: Option[];
   disableSwap?: boolean;
 };
 
@@ -189,10 +212,10 @@ function LanguageSelectorComp({
   targetLang,
   onSourceChange,
   onTargetChange,
-  options,
   disableSwap,
 }: Props) {
-  const sourceOptions = useMemo(() => withAuto(options), [options]);
+  const sourceOptions = useMemo(() => buildSourceOptions(), []);
+  const targetOptions = useMemo(() => buildTargetOptions(), []);
 
   const handleSwap = useCallback(() => {
     if (disableSwap) return;
@@ -200,6 +223,13 @@ function LanguageSelectorComp({
     onSourceChange(targetLang);
     onTargetChange(s);
   }, [disableSwap, sourceLang, targetLang, onSourceChange, onTargetChange]);
+
+  const displayTargetValue = useMemo(() => {
+    const v = toLower(targetLang);
+    if (v === "en") return "en-us";
+    if (v === "pt") return "pt-br";
+    return normalizeUiCode(targetLang, "target");
+  }, [targetLang]);
 
   return (
     <div
@@ -210,9 +240,9 @@ function LanguageSelectorComp({
         sm:grid-cols-[1fr_auto_1fr]
       "
     >
-      {/* LEFT (Deteksi Bahasa: special when open) */}
       <div className="min-w-0 sm:justify-self-end">
         <LangSelect
+          mode="source"
           value={sourceLang}
           onChange={onSourceChange}
           options={sourceOptions}
@@ -222,13 +252,12 @@ function LanguageSelectorComp({
         />
       </div>
 
-      {/* CENTER: SWAP */}
       <div className="flex justify-center">
         <Button
           type="button"
           variant="ghost"
           size="swap"
-          className="bg-white "
+          className="bg-white"
           onClick={handleSwap}
           disabled={disableSwap}
           title="Swap (Ctrl/Cmd+K)"
@@ -238,12 +267,12 @@ function LanguageSelectorComp({
         </Button>
       </div>
 
-      {/* RIGHT (Target: highlight when open) */}
       <div className="min-w-0 sm:justify-self-start">
         <LangSelect
-          value={targetLang}
+          mode="target"
+          value={displayTargetValue}
           onChange={onTargetChange}
-          options={options}
+          options={targetOptions}
           placeholder="Pilih bahasa"
           openLabel="Pilih bahasa sasaran"
           highlightWhenOpen
