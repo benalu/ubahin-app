@@ -36,15 +36,6 @@ function dedupByCode(list: Option[]) {
   return Array.from(m.values());
 }
 
-function resolvePopularForMode(raw: string, all: Map<string, Option>, mode: "source" | "target") {
-  const key = toLower(raw);
-  if (mode === "target") {
-    if (key === "en") return all.get("en-us") ? "en-us" : (all.get("en-gb") ? "en-gb" : "en");
-    if (key === "pt") return all.get("pt-br") ? "pt-br" : (all.get("pt-pt") ? "pt-pt" : "pt");
-  }
-  return normalizeUiCode(key, mode);
-}
-
 /* ------------------------- LangSelect ------------------------- */
 type LangSelectProps = {
   mode: "source" | "target";
@@ -70,6 +61,10 @@ const LangSelect = memo(function LangSelect({
   highlightWhenOpen,
 }: LangSelectProps) {
   const [open, setOpen] = useState(false);
+
+  // ✅ tentukan isMobile di awal sebelum dipakai di hook lain
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+
   const safeOptions = useMemo(() => dedupByCode(options), [options]);
 
   const byKey = useMemo(() => {
@@ -81,15 +76,15 @@ const LangSelect = memo(function LangSelect({
     return m;
   }, [safeOptions, mode]);
 
-  
   const allForGroup = useMemo(() => {
     const keys = Array.from(byKey.keys());
-    const filteredKeys = mode === "target" ? keys.filter((k) => k !== "auto") : keys; 
+    // 'auto' hanya untuk source
+    const filteredKeys = mode === "target" ? keys.filter((k) => k !== "auto") : keys;
     return filteredKeys.map((k) => byKey.get(k)!);
   }, [byKey, mode]);
 
- 
-  const rest = useSortedLanguages(allForGroup);
+  // ✅ kirim isMobile ke hook agar urutan di mobile tetap alfabetis
+  const rest = useSortedLanguages(allForGroup, isMobile);
 
   const curValue = normalizeUiCode(value, mode);
   const isAuto = curValue === "auto";
@@ -100,7 +95,6 @@ const LangSelect = memo(function LangSelect({
   const isBlue = isBlueAuto || isBlueAny;
   const displayLabel = (isBlueAny && openLabel) || (isBlueAuto && openLabelForAuto) || currentLabel;
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
   const layout = getColumnLayout(rest.length, isMobile);
 
   return (
@@ -134,31 +128,35 @@ const LangSelect = memo(function LangSelect({
       {open && (
         <PopoverContent
           align="center"
-          side={isMobile ? "bottom" : "bottom"} 
+          side={isMobile ? "bottom" : "bottom"}
           sideOffset={6}
           avoidCollisions={isMobile ? false : true}
           collisionPadding={isMobile ? 0 : 8}
           sticky="always"
           className={`
-                p-1
-                ${isMobile ? 'w-[95vw] max-w-sm' : 'w-[420px] max-w-lg'}
-              `}
+            p-1
+            ${isMobile ? "w-[95vw] max-w-sm" : "w-[420px] max-w-lg"}
+          `}
         >
           <Command>
-            <CommandInput placeholder="Cari bahasa…" />
-            <CommandList className={isMobile ? "max-h-[60vh]" : "max-h-[400px]"}>
+            <CommandInput placeholder="Cari bahasa…" autoFocus={!isMobile} />
+            <CommandList
+              className={`${
+                isMobile ? "max-h-[60vh]" : "max-h-[400px]"
+              } overscroll-contain will-change-transform`}
+            >
               <CommandEmpty>Tidak ditemukan</CommandEmpty>
 
-              
               <CommandGroup heading="Semua bahasa">
                 <div className={`relative grid ${layout.className}`}>
-                  
-                  {!isMobile && layout.columns > 1 &&
+                  {/* Delimiter antar kolom (desktop) */}
+                  {!isMobile &&
+                    layout.columns > 1 &&
                     Array.from({ length: layout.columns - 1 }).map((_, i) => (
                       <div
                         key={`vline-${i}`}
                         aria-hidden
-                        className="pointer-events-none absolute top-0 bottom-0 w-px bg-gray-200"
+                        className="pointer-events-none absolute top-0 bottom-0 w-px bg-gray-200 opacity-90"
                         style={{ left: `${((i + 1) / layout.columns) * 100}%` }}
                       />
                     ))}
@@ -167,6 +165,7 @@ const LangSelect = memo(function LangSelect({
                     const code = o.code;
                     const selected = code === curValue;
                     const label = getDisplayLabelFor(code);
+
                     return (
                       <CommandItem
                         key={code}
@@ -175,17 +174,28 @@ const LangSelect = memo(function LangSelect({
                           setOpen(false);
                         }}
                         aria-selected={selected}
-                        className={`${isMobile ? "py-2.5" : "py-2"} hover:bg-gray-50 transition-colors cursor-pointer`}
+                        className={`${
+                          isMobile ? "py-2.5" : "py-2"
+                        } hover:bg-gray-50 transition-colors cursor-pointer`}
                       >
-                         <div className="relative flex items-center w-full">
-                          {selected && (
-                            <Check
-                              className="absolute -left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600 pointer-events-none"
-                            />
-                          )}
-                          <span className="text-[15px] whitespace-nowrap">{label}</span>
+                        {/* Slot ikon kiri tetap, tidak mendorong teks melewati delimiter */}
+                        <div className="flex items-center w-full min-w-0 -ml-2">
+                          <span className="inline-flex items-center justify-center w-4 mr-1 shrink-0">
+                            {selected && <Check className="h-4 w-4 text-green-600" />}
+                          </span>
+                          {/* auto = satu baris; lainnya boleh wrap */}
+                          <span
+                            className={[
+                              "text-[15px]",
+                              code === "auto"
+                                ? "whitespace-nowrap"
+                                : "whitespace-normal break-words leading-tight pr-1",
+                            ].join(" ")}
+                          >
+                            {label}
+                          </span>
                         </div>
-                    </CommandItem>
+                      </CommandItem>
                     );
                   })}
                 </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import LanguageSelector from "@/features/translate/components/partials/LanguageSelector";
+import { LanguageSelector } from "@/features/translate/components/partials/language-selector";
 import TextInputPanel from "./partials/TextInputPanel";
 import TextOutputPanel from "./partials/TextOutputPanel";
 import { useTextTranslate } from "../hooks/useTextTranslate";

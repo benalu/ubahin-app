@@ -38,21 +38,22 @@ function reorderForVerticalLayout(items: SortableItem[], columns: number): Sorta
   return out;
 }
 
-export function useSortedLanguages(items: SortableItem[]): SortableItem[] {
+export function useSortedLanguages(items: SortableItem[], isMobile?: boolean): SortableItem[] {
   return useMemo(() => {
     if (!items?.length) return [];
-    const pinned = items.filter((i) => i.code === "auto");
-    const others = items.filter((i) => i.code !== "auto");
+
+    const pinned = items.filter(i => i.code === "auto");
+    const others = items.filter(i => i.code !== "auto");
     const sorted = sortLanguagesByName(others);
     const combined = [...pinned, ...sorted];
 
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    // gunakan flag isMobile yang dikirim dari komponen
     if (isMobile) return combined;
 
     const { columns } = getColumnLayout(combined.length, false);
     const cols = Math.min(columns, 3);
     return reorderForVerticalLayout(combined, cols);
-  }, [items]);
+  }, [items, isMobile]); // ⬅️ penting: tambahkan isMobile di deps
 }
 
 export function getColumnLayout(itemCount: number, isMobile: boolean) {

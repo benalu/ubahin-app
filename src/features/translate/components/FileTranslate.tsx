@@ -2,7 +2,7 @@
 "use client";
 
 import { useRef } from "react";
-import LanguageSelector from "@/features/translate/components/partials/LanguageSelector";
+import { LanguageSelector } from "@/features/translate/components/partials/language-selector";
 import DocDropArea from "./partials/document/DocDropArea";
 import DocFileList from "./partials/document/DocFileList";
 import DocToolbar from "./partials/document/DocToolbar";
