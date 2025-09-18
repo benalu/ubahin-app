@@ -42,7 +42,7 @@ export default function Dropzone({
         onClick={handleClick}
         className={`cursor-pointer ${
           hasFiles ? 'min-h-[220px] col-start-2 row-start-1' : 'h-62'
-        } flex flex-col items-center justify-center border border-white/10 bg-muted/70 backdrop-blur-xl shadow-lg rounded-2xl hover:shadow-md transition-shadow duration-200`}
+        } flex flex-col items-center justify-center border border-white/10 bg-muted/70 backdrop-blur-xl shadow-lg rounded-2xl hover:shadow-md hover:scale-105 transition-all duration-200 ease-in-out transform`}
       >
         <div className="p-3 rounded-full bg-secondary mb-2">
           <UploadCloud

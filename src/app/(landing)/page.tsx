@@ -1,6 +1,12 @@
+// src/app/(landing)/page.tsx
+import dynamic from "next/dynamic";
 import { toolCategories } from "@/features/landing/data/tools";
-import { HeroSection, SupportedFormats, FeatureCategoryCard, FeatureListSimple } from '@/features/landing/components';
+import { HeroSection, FeatureCategoryCard, FeatureListSimple } from '@/features/landing/components';
 
+const SupportedFormats = dynamic(
+  () => import("@/features/landing/components/SupportedFormats"),
+  { loading: () => <div className="h-24" /> }
+);
 
 
 export default function LandingPage() {

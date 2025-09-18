@@ -29,3 +29,4 @@ export function getOutputFormatOptionsByFile(file: File): readonly string[] {
   return FILE_CATEGORIES[category].outputFormats;
 }
 
+

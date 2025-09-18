@@ -93,24 +93,29 @@ export default function FileCard({
 
   return (
     <div className="relative bg-muted rounded-xl p-4 shadow flex flex-col justify-between">
-      {/* Remove Button (pojok kanan atas) */}
-      <div className="absolute top-2 right-2 z-10">
+      {/* ✅ Header dengan Filename dan Remove Button yang Sejajar */}
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex-1 min-w-0"> {/* min-w-0 untuk memungkinkan shrinking */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="text-sm font-medium text-muted-foreground truncate cursor-default">
+                {item.file.name}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs break-all">{item.file.name}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        
+        {/* Remove Button */}
         <button 
           onClick={() => onRemove(index)} 
-          className="text-gray-400 hover:text-red-500 transition-colors duration-200 cursor-pointer"
+          className="flex-shrink-0 text-gray-600  transition-colors duration-200 cursor-pointer p-1 hover:bg-gray-400 rounded-full"
+          title="Hapus file"
         >
           <X className="w-5 h-5" />
         </button>
-      </div>
-
-      {/* ✅ File name (pindah ke atas) */}
-      <div className="text-sm font-medium text-muted-foreground line-clamp-1 mb-3 pr-8">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="cursor-default">{item.file.name}</span>
-          </TooltipTrigger>
-          <TooltipContent>{item.file.name}</TooltipContent>
-        </Tooltip>
       </div>
 
       {/* Preview */}

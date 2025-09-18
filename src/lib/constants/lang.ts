@@ -10,7 +10,7 @@ import { sortLanguagesByName } from '@/utils/languageSorting';
  * - Sorting berdasarkan nama bahasa
  */
 
-/** Popular untuk UI (lowercase) */
+
 export const POPULAR_UI_CODES = new Set<string>([
   "en","id","es","fr","de","ja","ko","zh","pt","ru",
 ]);
@@ -18,13 +18,13 @@ export const POPULAR_UI_CODES = new Set<string>([
 export const POPULAR_UI_ORDER: string[] = ["id", "en", "ja", "ko"];
 export const POPULAR_LIMIT = 4;
 
-/** DeepL official sources (UPPERCASE) */
+
 export const DEEPL_SOURCES = new Set<string>([
   "BG","CS","DA","DE","EL","EN","ES","ET","FI","FR","HU","ID","IT","JA","KO",
   "LT","LV","NB","NL","PL","PT","RO","RU","SK","SL","SV","TR","UK","ZH",
 ]);
 
-/** DeepL official targets (UPPERCASE) */
+
 export const DEEPL_TARGETS = new Set<string>([
   "BG","CS","DA","DE","EL",
   "EN-GB","EN-US",
@@ -35,27 +35,23 @@ export const DEEPL_TARGETS = new Set<string>([
   "ZH" // DeepL: Simplified
 ]);
 
-/** Default varian target untuk EN/PT (ubah kalau mau) */
+
 export const DEFAULT_EN_TARGET: "EN-GB" | "EN-US" = "EN-US";
 export const DEFAULT_PT_TARGET: "PT-PT" | "PT-BR" = "PT-BR";
 
-/**
- * ✅ SINGLE normalization function - dipakai SEMUA tempat
- * Mode-aware: source collapse variants, target bisa keep variants
- */
 export function normalizeUiCode(input: string, mode: "source" | "target" | "display" = "display"): string {
   const v = (input || "").toLowerCase();
   if (!v) return "auto";
   if (v === "no") return "nb";
   
-  // Chinese: selalu collapse ke "zh"
+  
   if (v === "zh-cn" || v === "zh-hans" || v === "zh-tw" || v === "zh-hant" || v.startsWith("zh-")) {
     return "zh";
   }
   
-  // English & Portuguese: mode-aware
+  
   if (v === "en-us" || v === "en-gb") {
-    return mode === "target" ? v : "en"; // target keep variants, source/display collapse
+    return mode === "target" ? v : "en"; 
   }
   if (v === "pt-br" || v === "pt-pt") {
     return mode === "target" ? v : "pt";
@@ -64,9 +60,7 @@ export function normalizeUiCode(input: string, mode: "source" | "target" | "disp
   return v;
 }
 
-/**
- * ✅ Display labels dalam Bahasa Indonesia (clean, no flags)
- */
+
 export function getDisplayLabelFor(value: string): string {
   const v = normalizeUiCode(value, "display");
   const original = (value || "").toLowerCase();
@@ -77,7 +71,7 @@ export function getDisplayLabelFor(value: string): string {
   if (original === "pt-br") return "Portugis (Brasil)";
   if (original === "pt-pt") return "Portugis";
   
-  // Base cases - nama dalam Bahasa Indonesia
+  
   const labels: Record<string, string> = {
     "auto": "Deteksi bahasa",
     "ar": "Arab",
@@ -117,9 +111,7 @@ export function getDisplayLabelFor(value: string): string {
   return labels[v] || value;
 }
 
-/**
- * ✅ Mapping UI → DeepL code (backend only)
- */
+
 export function toDeepLCode(ui: string, kind: "source" | "target"): string | undefined {
   const code = normalizeUiCode(ui, kind);
   if (!code || code === "auto") return undefined;
@@ -144,9 +136,7 @@ export function isSupportedByDeepL(mapped: string, kind: "source"|"target"): boo
   return kind === "source" ? DEEPL_SOURCES.has(up) : DEEPL_TARGETS.has(up);
 }
 
-/**
- * ✅ Build target options dengan sorting berdasarkan nama
- */
+
 export function buildTargetOptions(): { code: string; label: string }[] {
   const base = [
     "bg","cs","da","de","el","es","et","fi","fr","hu","id","it","ja","ko",

@@ -21,10 +21,10 @@ const items: Item[] = [
 
 export default function SupportedFormats() {
   return (
-    <section className="px-4">
+    <section className="px-4" aria-labelledby="supported-formats">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6 text-center md:mb-8">
-          <h2 className="text-balance text-2xl font-semibold md:text-3xl">
+          <h2 id="supported-formats" className="text-balance text-2xl font-semibold md:text-3xl">
             <span className="font-monda op-dlig op-salt op-ss01 tracking-[.20em] text-[25px]">UBAHIN</span> mendukung...
           </h2>
           
@@ -61,17 +61,15 @@ export default function SupportedFormats() {
               </div>
 
               {/* badges mini, otomatis wrap */}
-              <div className="flex flex-wrap gap-1.5 md:gap-2">
+              <ul className="flex flex-wrap gap-1.5 md:gap-2" role="list">
                 {formats.map((f) => (
-                  <Badge
-                    key={f}
-                    variant="default"
-                    className="h-6 rounded-full px-2 text-[11px] md:h-7 md:px-2.5 md:text-xs text-gray-200"
-                  >
-                    {f}
-                  </Badge>
+                  <li key={f}>
+                    <Badge className="h-6 rounded-full px-2 text-[11px] md:h-7 md:px-2.5 md:text-xs text-gray-200">
+                      {f}
+                    </Badge>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </Card>
           ))}
         </div>

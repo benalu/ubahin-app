@@ -9,7 +9,7 @@ import type { UploadedFile } from '../../../types/type';
 
 import { FileToolbarActions } from './partials/FileToolbarActions';
 import { FileToolbarDropdown } from './partials/FileToolbarDropdown';
-import { FileToolbarDropdownMenu } from './partials/FileToolbarDropdownMenu';
+import { DropdownMenu } from './partials/DropdownMenu';
 
 // === Utility Functions ===
 
@@ -73,19 +73,21 @@ export default function Toolbar({
 
   // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handlePointerDown(event: PointerEvent) {
+      // Hanya pasang di desktop
+      if (window.innerWidth < 640) return;
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
     }
 
     if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('pointerdown', handlePointerDown);
+      return () => document.removeEventListener('pointerdown', handlePointerDown);
     }
   }, [isDropdownOpen]);
 
-  // Toggle + calculate dropdown position
+  
   const toggleDropdown = () => {
     if (!allSameCategory) return;
     if (buttonRef.current) {
@@ -131,16 +133,21 @@ export default function Toolbar({
         </div>
       </div>
 
-      <FileToolbarDropdownMenu
+      <DropdownMenu
         isOpen={isDropdownOpen}
         mounted={mounted}
         dropdownRef={dropdownRef}
-        availableFormats={availableFormats}
-        selectedFormat={selectedFormat}
-        handleFormatSelect={handleFormatSelect}
-        dropdownPosition={dropdownPosition}
-        currentCategoryName={getCurrentCategoryName(files, allSameCategory)}
+        options={[...availableFormats]}
+        selected={selectedFormat}
+        onSelect={handleFormatSelect}
         onClose={() => setIsDropdownOpen(false)}
+        dropdownPosition={dropdownPosition}
+        header={
+          <h3 className="text-lg font-semibold text-secondary mx-auto text-center">
+             {getCurrentCategoryName(files, allSameCategory)}
+          </h3>
+        }
+        isMobile={typeof window !== 'undefined' && window.innerWidth < 640}
       />
     </>
   );

@@ -8,6 +8,9 @@ import { normalizeUiCode, toDeepLCode } from "@/lib/constants/lang";
 const PROVIDER = "deepl";
 const DEEPL_ENDPOINT = "https://api.deepl.com/v2/translate";
 
+export const runtime = "nodejs";
+export const preferredRegion = ["sin1"]; // Singapore
+
 type DeepLTranslateResponse = {
   translations: Array<{ detected_source_language?: string; text: string }>;
 };

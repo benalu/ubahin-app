@@ -9,6 +9,7 @@ export default function HeroSection() {
       
       <p className="mt-4 text-muted-foreground text-lg font-pogonia font-light op-dlig op-salt op-ss01">
         Ubahin adalah layanan translate dan konversi berbagai format, tidak ada iklan, tidak ada pembayaran, semuanya gratis.
+        Semua file diproses melalui browser anda
       </p>
     </section>
   );

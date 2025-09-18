@@ -22,6 +22,7 @@ export function FileToolbarActions({
       {/* Convert All */}
       <Button
         disabled={!hasFiles}
+        size="swap"
         onClick={onConvertAll}
         aria-label="Convert all files"
         className="bg-secondary text-white rounded-full px-4 py-6 flex items-center justify-center gap-2 shadow-md text-sm w-full sm:w-auto cursor-pointer hover:bg-secondary/90 transition-colors"
@@ -33,6 +34,7 @@ export function FileToolbarActions({
       {/* Download All */}
       <Button
         disabled={disabledDownload}
+        size="swap"
         aria-label="Download all as zip"
         className={`rounded-full px-4 py-6 flex items-center justify-center gap-2 text-sm w-full sm:w-auto ${
           disabledDownload
@@ -48,12 +50,12 @@ export function FileToolbarActions({
       <Button
         disabled={!hasFiles}
         onClick={onRemoveAll}
+        size="swap"
         aria-label="Remove all files"
-        className="bg-muted-foreground text-white rounded-full px-4 py-6 flex items-center justify-center gap-2 text-sm w-full sm:w-auto hover:bg-red-400 cursor-pointer"
+        className="bg-muted-foreground text-white rounded-full px-3.5 py-6 flex items-center justify-center gap-2 text-sm w-full sm:w-auto hover:bg-red-400 cursor-pointer"
       >
         <Trash2 className="w-6 h-6" aria-hidden="true" />
         <span className="sm:hidden">Remove All Files</span>
-        <span className="hidden sm:inline">Remove All</span>
       </Button>
     </div>
   );
