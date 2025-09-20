@@ -4,6 +4,8 @@ import { FILE_CATEGORIES } from '@/utils/fileCategories';
 // Maksimum ukuran file: 10 MB
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+export const MAX_UPLOAD_FILES = 5;
+
 // Ekstensi file yang diperbolehkan (unik)
 export const ALLOWED_EXTENSIONS = Object.values(FILE_CATEGORIES)
   .flatMap((cat) => cat.exts)

@@ -1,3 +1,4 @@
+// src/lib/constants/translateDocs.ts
 import {
   extsForCategories,
   mimesForCategories,

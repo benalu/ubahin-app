@@ -65,6 +65,11 @@ export const ERROR_MESSAGES = {
     message: 'File dengan nama yang sama sudah ditambahkan.',
     action: 'Ganti Nama'
   },
+  TOO_MANY_FILES: {
+    title: 'Batas Tercapai',
+    message: 'Jumlah file melebihi batas maksimum.',
+    action: 'OK'
+  },
   
   // HTTP Status Errors
   BAD_REQUEST: {

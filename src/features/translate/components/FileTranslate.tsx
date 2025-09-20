@@ -40,6 +40,9 @@ export default function FileTranslate({
     removeFile,
     clearAll,
     translateAll,
+
+    // dari hook (dipakai untuk disable button)
+    remaining,
   } = useFileTranslate({ sourceLang, targetLang });
 
   const hasFiles = files.length > 0;
@@ -97,13 +100,13 @@ export default function FileTranslate({
             <Button
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              disabled={working}
+              disabled={working || remaining === 0}
               className="w-full justify-center cursor-pointer rounded-xl border border-gray-900 bg-white"
-              title="Tambah Dokumen Lainnya"
+              title={remaining === 0 ? "Batas file tercapai" : "Tambah Dokumen Lainnya"}
               aria-label="Tambah Dokumen Lainnya"
             >
               <Upload className="h-4 w-4 mr-3" aria-hidden="true" />
-              Tambah Dokumen Lainnya
+              {remaining === 0 ? "Batas file tercapai" : "Tambah Dokumen Lainnya"}
             </Button>
           </aside>
         </div>

@@ -27,6 +27,10 @@ export default function DocDropArea({
   onDragLeave,
   onDrop,
 }: Props) {
+  const filesSelectedHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) onFilesSelected(e.target.files);
+  };
+
   return (
     <div
       className={[
@@ -40,7 +44,7 @@ export default function DocDropArea({
         type="file"
         multiple
         accept={accept}
-        onChange={(e) => e.target.files && onFilesSelected(e.target.files)}
+        onChange={filesSelectedHandler}
         className="hidden"
       />
 
@@ -57,7 +61,7 @@ export default function DocDropArea({
         <div className="absolute inset-0 rounded-xl border-2 border-dashed border-blue-600" />
       </div>
 
-      {/* konten: min-height responsive, TANPA h-full */}
+      {/* konten */}
       <div
         role="button"
         tabIndex={0}
@@ -89,12 +93,13 @@ export default function DocDropArea({
         <p className="mb-2 text-xl font-medium text-gray-700">
           {isDragging
             ? "Lepas file di sini untuk mengunggah"
-            : "Seret File ke sini atau klik untuk memilih"}
+            : "Seret file ke sini atau klik untuk memilih"}
         </p>
         <p className="text-gray-500">
-          Kami mendukung .doc(x), .htm(l), .pdf, .pptx, dan .txt
+          Mendukung .docx, .pptx, .xlsx, .pdf, .htm(l), .txt
         </p>
       </div>
     </div>
   );
 }
+

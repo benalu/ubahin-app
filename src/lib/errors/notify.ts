@@ -1,3 +1,4 @@
+// src/lib/errors/notify.ts
 import { toast } from "sonner";
 import {
   getErrorMessage,

@@ -39,12 +39,12 @@ export default function TranslateNavigation() {
               href={path}
               className={cn(
                 "group w-full text-left",
-                "rounded-xl border bg-white shadow-md",
+                "rounded-xl border bg-white ",
                 "px-3.5 py-3 sm:px-2 sm:py-2",
                 "transition-colors focus:outline-none",
                 "focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2",
                 isActive
-                  ? "border-blue-500/70 bg-blue-50"
+                  ? "border-black-500/70 bg-black-50"
                   : "border-slate-200 hover:bg-slate-50"
               )}
             >
@@ -53,7 +53,7 @@ export default function TranslateNavigation() {
                   className={cn(
                     "h-8 w-6 mt-0.5 sm:h-9 sm:w-6",
                     isActive 
-                      ? "text-blue-600" 
+                      ? "text-black-600" 
                       : "text-slate-500 group-hover:text-slate-700"
                   )}
                   aria-hidden="true"
@@ -71,7 +71,7 @@ export default function TranslateNavigation() {
 
                   <div className={cn(
                     "text-xs mt-0.5",
-                    isActive ? "text-blue-700/80" : "text-slate-500"
+                    isActive ? "text-black-700/80" : "text-slate-500"
                   )}>
                     {subLabel}
                   </div>

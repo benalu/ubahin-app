@@ -6,6 +6,7 @@ import { toastError, toastSuccess } from "@/lib/errors/notify";
 import { createFileError, getErrorMessage } from "@/lib/errors/errorMessages";
 import { isDeepLDocName } from "@/lib/constants/translateDocs";
 import { normalizeUiCode } from "@/lib/constants/lang";
+import { MAX_UPLOAD_FILES, MAX_FILE_SIZE } from "@/lib/constants/file";
 
 type LangCode = string;
 
@@ -21,26 +22,41 @@ type DeepLStatusOk = {
   error_message?: string;
 };
 
-function isObject(x: unknown): x is Record<string, unknown> {
+/** Strict helpers (tanpa any) */
+function isRecord(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null;
 }
 function isDeepLUploadOk(x: unknown): x is DeepLUploadOk {
-  return isObject(x) && typeof x.document_id === "string" && typeof x.document_key === "string";
+  if (!isRecord(x)) return false;
+  const id = x["document_id"];
+  const key = x["document_key"];
+  return typeof id === "string" && typeof key === "string";
 }
 function isDeepLStatusOk(x: unknown): x is DeepLStatusOk {
-  if (!isObject(x)) return false;
-  const s = x.status;
-  if (typeof s !== "string") return false;
-  if (s !== "queued" && s !== "translating" && s !== "done" && s !== "error") return false;
-  if ("seconds_remaining" in x && typeof x.seconds_remaining !== "number") return false;
-  if ("error_message" in x && typeof x.error_message !== "string" && typeof x.error_message !== "undefined") return false;
+  if (!isRecord(x)) return false;
+
+  const status = x["status"];
+  if (
+    status !== "queued" &&
+    status !== "translating" &&
+    status !== "done" &&
+    status !== "error"
+  ) return false;
+
+  if ("seconds_remaining" in x) {
+    const sr = x["seconds_remaining"];
+    if (typeof sr !== "number") return false;
+  }
+
+  if ("error_message" in x) {
+    const em = x["error_message"];
+    if (typeof em !== "string" && typeof em !== "undefined") return false;
+  }
+
   return true;
 }
 
-export function useFileTranslate(opts: {
-  sourceLang: LangCode;
-  targetLang: LangCode;
-}) {
+export function useFileTranslate(opts: { sourceLang: LangCode; targetLang: LangCode }) {
   const { sourceLang, targetLang } = opts;
 
   const [files, setFiles] = useState<File[]>([]);
@@ -56,6 +72,7 @@ export function useFileTranslate(opts: {
     });
   }, []);
 
+  /** Pisahkan file yang didukung DeepL (berdasarkan nama/ekstensi) */
   function partitionSupported(list: FileList | File[]): { accepted: File[]; rejected: File[] } {
     const arr = Array.isArray(list) ? list : Array.from(list);
     const accepted: File[] = [];
@@ -67,16 +84,55 @@ export function useFileTranslate(opts: {
     return { accepted, rejected };
   }
 
-  const addFiles = useCallback((fileList: FileList) => {
+  /** Sisa slot untuk UI & guard */
+  const remainingSlots = useCallback(() => Math.max(0, MAX_UPLOAD_FILES - files.length), [files.length]);
+
+  /** Tambah file (validasi format/ukuran/duplikat/limit) */
+  const addFiles = useCallback((fileList: FileList | File[]) => {
     const { accepted, rejected } = partitionSupported(fileList);
+
+    // 1) format tidak didukung
     if (rejected.length) {
       const first = rejected[0];
       const extra = rejected.length > 1 ? ` dan ${rejected.length - 1} file lain` : "";
       toastError(createFileError("UNSUPPORTED_FORMAT", `${first.name}${extra}`));
     }
-    if (accepted.length) setFiles((prev) => [...prev, ...accepted]);
-  }, []);
 
+    // 2) size limit
+    const tooLarge = accepted.filter((f) => f.size > MAX_FILE_SIZE);
+    if (tooLarge.length) {
+      const first = tooLarge[0];
+      const extra = tooLarge.length > 1 ? ` dan ${tooLarge.length - 1} file lain` : "";
+      toastError(createFileError("FILE_TOO_LARGE", `${first.name}${extra}`, { fileSize: first.size }));
+    }
+    const sizeOk = accepted.filter((f) => f.size <= MAX_FILE_SIZE);
+
+    // 3) dedupe by filename
+    const existingNames = new Set(files.map((f) => f.name));
+    const deduped = sizeOk.filter((f) => !existingNames.has(f.name));
+    const dupCount = sizeOk.length - deduped.length;
+    if (dupCount > 0) {
+      toastError(createFileError("DUPLICATE_FILE", `${dupCount} file`));
+    }
+
+    // 4) limit jumlah file
+    const slots = remainingSlots();
+    if (slots <= 0 && deduped.length) {
+      toastError(createFileError("TOO_MANY_FILES", `${MAX_UPLOAD_FILES} file`));
+      return;
+    }
+    const toAdd = deduped.slice(0, slots);
+    const overflow = deduped.length - toAdd.length;
+    if (overflow > 0) {
+      toastError(createFileError("TOO_MANY_FILES", `${MAX_UPLOAD_FILES} file`));
+    }
+
+    if (toAdd.length) {
+      setFiles((prev) => [...prev, ...toAdd]);
+    }
+  }, [files, remainingSlots]);
+
+  /** Drag state handlers */
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -90,12 +146,22 @@ export function useFileTranslate(opts: {
     if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
   }, [addFiles]);
 
+  /** Hapus file + re-index jobs agar status tidak salah sasaran */
   const removeFile = useCallback((index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    setJobs((prev) => {
-      const n = { ...prev };
-      delete n[index];
-      return n;
+    setFiles((prevFiles) => {
+      const nextFiles = prevFiles.filter((_, i) => i !== index);
+      setJobs((prevJobs) => {
+        const next: Record<number, JobInfo> = {};
+        let cursor = 0;
+        for (let i = 0; i < prevFiles.length; i++) {
+          if (i === index) continue;
+          const job = prevJobs[i];
+          if (job) next[cursor] = job;
+          cursor++;
+        }
+        return next;
+      });
+      return nextFiles;
     });
   }, []);
 
@@ -104,6 +170,7 @@ export function useFileTranslate(opts: {
     setJobs({});
   }, []);
 
+  /** Pipeline terjemah satu file */
   async function translateOne(i: number, file: File) {
     try {
       setJob(i, { status: "uploading", error: undefined, secondsRemaining: undefined });
@@ -137,9 +204,7 @@ export function useFileTranslate(opts: {
       while (!done) {
         await new Promise((r) => setTimeout(r, 1200));
         const stRes = await fetch(
-          `/api/translate/deepl/document/status?document_id=${encodeURIComponent(
-            document_id
-          )}&document_key=${encodeURIComponent(document_key)}`
+          `/api/translate/deepl/document/status?document_id=${encodeURIComponent(document_id)}&document_key=${encodeURIComponent(document_key)}`
         );
         const stJson: unknown = await stRes.json();
         if (!stRes.ok) {
@@ -148,24 +213,26 @@ export function useFileTranslate(opts: {
         }
         if (!isDeepLStatusOk(stJson)) throw new Error("Invalid status payload");
 
-        const st = stJson.status;
+        const st = (stJson as DeepLStatusOk).status;
         if (st === "done") {
           done = true;
         } else if (st === "error") {
-          throw new Error(stJson.error_message || "DeepL document error");
+          const em = (stJson as DeepLStatusOk).error_message;
+          throw new Error(em || "DeepL document error");
         } else {
           setJob(i, {
             status: "processing",
-            secondsRemaining: typeof stJson.seconds_remaining === "number" ? stJson.seconds_remaining : undefined,
+            secondsRemaining:
+              typeof (stJson as DeepLStatusOk).seconds_remaining === "number"
+                ? (stJson as DeepLStatusOk).seconds_remaining
+                : undefined,
           });
         }
       }
 
       // 3) Download
       const dlRes = await fetch(
-        `/api/translate/deepl/document/download?document_id=${encodeURIComponent(
-          document_id
-        )}&document_key=${encodeURIComponent(document_key)}`
+        `/api/translate/deepl/document/download?document_id=${encodeURIComponent(document_id)}&document_key=${encodeURIComponent(document_key)}`
       );
       if (!dlRes.ok) {
         const payload = await dlRes.text();
@@ -199,8 +266,14 @@ export function useFileTranslate(opts: {
     }
   }
 
+  /** Jalankan semua file berurutan (menghormati status 'done') */
   async function translateAll() {
-    if (!files.length || working) return;
+    if (working) return;
+    if (!files.length) {
+      // gunakan error generic tanpa memaksa fileName
+      toastError("BAD_REQUEST");
+      return;
+    }
     setWorking(true);
     try {
       for (let i = 0; i < files.length; i++) {
@@ -227,5 +300,8 @@ export function useFileTranslate(opts: {
     clearAll,
     translateAll,
     setFiles, // diekspos jika dibutuhkan
+    /** untuk UI */
+    maxFiles: MAX_UPLOAD_FILES,
+    remaining: remainingSlots(),
   };
 }
