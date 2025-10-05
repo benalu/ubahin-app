@@ -7,6 +7,7 @@ import {
   FileVideo,
   FileAudio,
   Archive,
+  BookOpen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -113,6 +114,20 @@ export const FILE_CATEGORIES: Record<string, FileCategory> = {
       'image/png',
       'image/webp',
       'image/gif',
+    ],
+  },
+  ebook: {
+    exts: ['epub', 'mobi', 'azw', 'azw3', 'fb2', 'lit', 'lrf', 'pdb', 'tcr'],
+    icon: BookOpen,
+    outputFormats: ['epub', 'mobi', 'azw3', 'pdf'],
+    mimeTypes: [
+      'application/epub+zip',
+      'application/x-mobipocket-ebook',
+      'application/vnd.amazon.ebook',
+      'application/x-fictionbook+xml',
+      'application/x-ms-lit',
+      'application/x-sony-bbeb',
+      'application/x-palm-database',
     ],
   },
 };

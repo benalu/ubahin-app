@@ -1,77 +1,143 @@
 // src/features/landing/components/SupportedFormats.tsx
-
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Image as ImageIcon, Music4, FileText, Clapperboard } from "lucide-react";
-import React from "react";
+import { FileText, Image as ImageIcon, Archive, Play } from "lucide-react";
 
-type Item = {
+type FormatCategory = {
   title: string;
+  description: string;
   formats: string[];
   icon: React.ReactNode;
-  accent?: string;
+  color: string; // gradient hover tint
+  popular?: string[];
 };
 
-const items: Item[] = [
-  { title: "Gambar", formats: ["png", "jpg", "gif", "webp", "heic"], icon: <ImageIcon className="h-5 w-5" />,     accent: "from-emerald-400/20" },
-  { title: "Audio - Video", formats: ["mp3", "wav", "flac", "aac", "mp4", "m4a", "avi", "mov"], icon: <Music4 className="h-5 w-5" />,        accent: "from-violet-400/20" },
-  { title: "Dokumen", formats: ["pdf", "docx", "ppt", "html", "rtf", "xls", "xlsx", "csv", "txt"], icon: <FileText className="h-5 w-5" />,      accent: "from-amber-400/25" },
-  { title: "Arsip", formats: ["rar", "zip", "tar", "7z", "gz"], icon: <Clapperboard className="h-5 w-5" />,  accent: "from-rose-400/20" },
+const formatCategories: FormatCategory[] = [
+  {
+    title: "Dokumen",
+    description: "Format dokumen untuk teks, laporan, dan presentasi.",
+    formats: ["PDF", "DOCX", "PPTX", "TXT", "RTF", "ODT"],
+    icon: <FileText className="h-6 w-6" aria-hidden="true" />,
+    color: "from-blue-500/10 to-blue-600/10",
+    popular: ["PDF", "DOCX"],
+  },
+  {
+    title: "Gambar",
+    description: "Semua format gambar populer untuk web dan cetak.",
+    formats: ["PNG", "JPG", "WEBP", "SVG", "GIF", "HEIC"],
+    icon: <ImageIcon className="h-6 w-6" aria-hidden="true" />,
+    color: "from-green-500/10 to-green-600/10",
+    popular: ["PNG", "JPG"],
+  },
+  {
+    title: "Media",
+    description: "Audio dan video berkualitas tinggi untuk kreator.",
+    formats: ["MP3", "WAV", "MP4", "AVI", "MOV", "FLAC"],
+    icon: <Play className="h-6 w-6" aria-hidden="true" />,
+    color: "from-purple-500/10 to-purple-600/10",
+    popular: ["MP3", "MP4"],
+  },
+  {
+    title: "Arsip",
+    description: "Ekstrak dan kompres untuk berbagai kebutuhan.",
+    formats: ["ZIP", "RAR", "7Z", "TAR", "GZ"],
+    icon: <Archive className="h-6 w-6" aria-hidden="true" />,
+    color: "from-orange-500/10 to-orange-600/10",
+    popular: ["ZIP"],
+  },
 ];
 
-export default function SupportedFormats() {
+export default function SupportedsFormats() {
   return (
-    <section className="px-4" aria-labelledby="supported-formats">
+    <section
+      id="supported-formats"
+      className="pt-6 md:pt-8 pb-14 md:pb-16 px-4"
+      aria-labelledby="supported-formats-heading"
+    >
       <div className="mx-auto max-w-6xl">
-        <header className="mb-6 text-center md:mb-8">
-          <h2 id="supported-formats" className="text-balance text-2xl font-semibold md:text-3xl">
-            <span className="font-monda op-dlig op-salt op-ss01 tracking-[.20em] text-[25px]">UBAHIN</span> mendukung...
+        {/* Header */}
+        <header className="mb-8 text-center">
+          <h2
+            id="supported-formats-heading"
+            className="text-3xl md:text-4xl font-bold mb-2"
+          >
+            <span className="font-monda op-dlig op-salt op-ss01 tracking-[.20em]">
+              UBAHIN
+            </span>
+            <span className="text-primary"> mendukung 50+ format</span>
           </h2>
-          
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+            Konversi dan terjemahkan file{" "}
+            <strong>dokumen</strong>, <strong>gambar</strong>,{" "}
+            <strong>audio-video</strong>, dan <strong>arsip</strong>—langsung di
+            browser.
+          </p>
         </header>
 
-        {/* Auto-fit fills leftover space → jauh lebih rapat di desktop, tetap rapi di mobile */}
-        <div className="grid gap-3 md:gap-4 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
-          {items.map(({ title, formats, icon, accent }) => (
-            <Card
-              key={title}
-              className={[
-                "relative overflow-hidden rounded-2xl border-l-4 border-secondary bg-card/70",
-                "shadow-sm transition-all hover:shadow-md",
-                "p-4 md:p-5",
-              ].join(" ")}
-            >
-              {/* subtle gradient accent di sudut kanan atas 
-              <div
-                aria-hidden
-                className={[
-                  "pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full",
-                  "bg-gradient-to-br to-transparent blur-2xl",
-                  accent ?? "from-primary/20",
-                ].join(" ")}
-              />
-              */}
+        {/* Kategori */}
+        <div className="grid gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {formatCategories.map(
+            ({ title, description, formats, icon, color, popular }) => {
+              const headingId = `cat-${title.toLowerCase()}`;
+              const descId = `desc-${title.toLowerCase()}`;
+              return (
+                <Card
+                  key={title}
+                  className="group relative overflow-hidden border border-border/60 bg-card/70 p-5 md:p-6 transition-shadow duration-300 hover:shadow-lg"
+                >
+                  {/* Hover tint */}
+                  <div
+                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                    aria-hidden="true"
+                  />
 
-              {/* header ringkas */}
-              <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60 ring-1 ring-border">
-                  {icon}
-                </div>
-                <h3 className="text-sm font-medium tracking-tight md:text-base">{title}</h3>
-              </div>
+                  <article
+                    aria-labelledby={headingId}
+                    aria-describedby={descId}
+                    className="relative"
+                  >
+                    {/* Icon & Title */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-muted/60 ring-1 ring-border/70 group-hover:scale-105 transition-transform duration-300">
+                        {icon}
+                      </div>
+                      <div>
+                        <h3
+                          id={headingId}
+                          className="font-semibold text-lg leading-tight"
+                        >
+                          {title}
+                        </h3>
+                        <p
+                          id={descId}
+                          className="text-xs text-muted-foreground"
+                        >
+                          {description}
+                        </p>
+                      </div>
+                    </div>
 
-              {/* badges mini, otomatis wrap */}
-              <ul className="flex flex-wrap gap-1.5 md:gap-2" role="list">
-                {formats.map((f) => (
-                  <li key={f}>
-                    <Badge className="h-6 rounded-full px-2 text-[11px] md:h-7 md:px-2.5 md:text-xs text-gray-200">
-                      {f}
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ))}
+                    {/* Formats as semantic list */}
+                    <ul className="mt-2 flex flex-wrap gap-1.5">
+                      {formats.map((format) => (
+                        <li key={format}>
+                          <Badge
+                            variant={
+                              popular?.includes(format) ? "default" : "secondary"
+                            }
+                            className="text-[11px] px-2 py-0.5"
+                          >
+                            {format}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                </Card>
+              );
+            }
+          )}
         </div>
       </div>
     </section>
